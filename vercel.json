@@ -1,0 +1,5 @@
+{
+  "functions": {
+    "src/app/api/generate/**": { "maxDuration": 60 }
+  }
+}
