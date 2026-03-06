@@ -174,7 +174,7 @@ export default function EditableSlide({ slide, theme, onSave }: EditableSlidePro
   }
 
   const inputClass =
-    'w-full bg-transparent outline-none placeholder:opacity-30 focus:ring-2 focus:ring-blue-400/20 rounded-md px-1.5 -mx-1.5 transition-shadow'
+    'w-full bg-transparent outline-none placeholder:opacity-30 focus:ring-2 focus:ring-brand-blue/20 rounded-md px-1.5 -mx-1.5 transition-shadow'
 
   return (
     <div
@@ -187,7 +187,10 @@ export default function EditableSlide({ slide, theme, onSave }: EditableSlidePro
       }}
     >
       {/* Save indicator */}
-      <span className={`absolute right-4 top-3 z-10 text-[11px] font-medium transition-opacity ${saveStatus === 'idle' ? 'opacity-0' : 'opacity-50'}`}>
+      <span
+        aria-live="polite"
+        className={`absolute right-4 top-3 z-10 text-[11px] font-medium transition-opacity ${saveStatus === 'idle' ? 'opacity-0' : 'opacity-50'}`}
+      >
         {saveStatus === 'pending' && 'Saving...'}
         {saveStatus === 'saved' && 'Saved'}
       </span>

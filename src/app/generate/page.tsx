@@ -13,6 +13,7 @@ import {
   ChevronDown,
   AlignLeft,
   Image,
+  GripVertical,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -321,38 +322,77 @@ export default function GeneratePage() {
         </div>
 
         {/* ── Prompt Input ── */}
-        <div className="flex items-center gap-3 rounded-2xl border border-gray-200/80 bg-white px-5 py-3.5 shadow-sm ring-1 ring-black/[0.03] transition-shadow focus-within:border-brand-blue/30 focus-within:shadow-md focus-within:ring-brand-blue/10">
-          <input
-            ref={inputRef}
-            type="text"
-            value={state.topic}
-            onChange={(e) => set({ topic: e.target.value })}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && canGenerate && !state.isLoadingOutline) {
-                handleGenerateOutline()
-              }
-            }}
-            placeholder="Describe your presentation topic..."
-            className="min-w-0 flex-1 bg-transparent text-[15px] text-dark outline-none placeholder:text-grey/40"
-          />
-          <button
-            onClick={handleGenerateOutline}
-            disabled={!canGenerate || state.isLoadingOutline}
-            className={cn(
-              'shrink-0 rounded-lg p-2 transition-all',
-              canGenerate && !state.isLoadingOutline
-                ? 'text-brand-blue hover:bg-brand-blue/10'
-                : 'cursor-not-allowed text-gray-300',
-            )}
-            aria-label="Generate outline"
-          >
-            {state.isLoadingOutline ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <RefreshCw className="h-5 w-5" />
-            )}
-          </button>
+        <div>
+          <div className="flex items-center gap-3 rounded-2xl border border-gray-200/80 bg-white px-5 py-4 shadow-sm ring-1 ring-black/[0.03] transition-shadow focus-within:border-brand-blue/30 focus-within:shadow-md focus-within:ring-brand-blue/10">
+            <Sparkles className="h-4 w-4 shrink-0 text-brand-blue/40" />
+            <input
+              ref={inputRef}
+              type="text"
+              value={state.topic}
+              onChange={(e) => set({ topic: e.target.value.slice(0, 500) })}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && canGenerate && !state.isLoadingOutline) {
+                  handleGenerateOutline()
+                }
+              }}
+              placeholder="e.g. The future of renewable energy, Machine learning basics..."
+              maxLength={500}
+              className="min-w-0 flex-1 bg-transparent text-[15px] text-dark outline-none placeholder:text-grey/40"
+            />
+            <button
+              onClick={handleGenerateOutline}
+              disabled={!canGenerate || state.isLoadingOutline}
+              className={cn(
+                'shrink-0 rounded-lg p-2 transition-all',
+                canGenerate && !state.isLoadingOutline
+                  ? 'text-brand-blue hover:bg-brand-blue/10'
+                  : 'cursor-not-allowed text-gray-300',
+              )}
+              aria-label="Generate outline"
+            >
+              {state.isLoadingOutline ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <RefreshCw className="h-5 w-5" />
+              )}
+            </button>
+          </div>
+          <div className="mt-1.5 flex justify-between px-2">
+            <span className="text-[11px] text-grey/60">
+              {state.topic.length < 3 && state.topic.length > 0 ? 'Minimum 3 characters' : '\u00A0'}
+            </span>
+            <span className={cn('text-[11px] tabular-nums', state.topic.length > 450 ? 'text-error' : 'text-grey/40')}>
+              {state.topic.length}/500
+            </span>
+          </div>
         </div>
+
+        {/* ── Topic suggestions when empty ── */}
+        {!hasOutline && !state.isLoadingOutline && state.topic.length === 0 && (
+          <div className="mt-6">
+            <p className="mb-2.5 text-xs font-medium text-grey/60">Try one of these</p>
+            <div className="flex flex-wrap gap-2">
+              {[
+                'The water cycle explained',
+                'Introduction to machine learning',
+                'World War II key events',
+                'Climate change solutions',
+                'How blockchain works',
+              ].map((suggestion) => (
+                <button
+                  key={suggestion}
+                  onClick={() => {
+                    set({ topic: suggestion })
+                    inputRef.current?.focus()
+                  }}
+                  className="rounded-full border border-gray-200 bg-white px-3.5 py-1.5 text-xs font-medium text-mid transition-all hover:border-brand-blue/30 hover:bg-brand-blue/5 hover:text-brand-blue"
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* ── Loading state for outline ── */}
         {state.isLoadingOutline && !hasOutline && (
@@ -374,6 +414,7 @@ export default function GeneratePage() {
                     key={item.position}
                     className="group flex items-start gap-3 px-5 py-4 transition-colors hover:bg-gray-50/50"
                   >
+                    <GripVertical className="mt-1.5 h-4 w-4 shrink-0 cursor-grab text-grey/30 transition-colors group-hover:text-grey/60" />
                     <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand-blue/8 text-xs font-bold tabular-nums text-brand-blue">
                       {item.position}
                     </span>

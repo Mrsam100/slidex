@@ -24,7 +24,7 @@ const faqs = [
   {
     question: 'Is SlideX free to use?',
     answer:
-      'Yes! SlideX is completely free to use. Create unlimited decks with all 5 themes, export to PDF, and share with public links — no credit card required.',
+      'Yes! The free plan gives you 5 decks per month with the Minimal theme, PDF export, and public share links — no credit card required. Upgrade to Pro for unlimited decks and all 5 themes.',
   },
   {
     question: 'Who is SlideX designed for?',

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { MoreHorizontal, Pencil, Copy, Trash2, Star, RotateCcw, XCircle } from 'lucide-react'
 import { cn, timeAgo } from '@/lib/utils'
 import type { Slide, Theme } from '@/types/deck'
-import SlideThumb from '@/components/slides/SlideThumb'
+import SlideCanvas from '@/components/slides/SlideCanvas'
 
 interface DeckListItemProps {
   deck: {
@@ -107,7 +107,7 @@ export default function DeckListItem({
         {firstSlide ? (
           <div className="absolute inset-0 overflow-hidden">
             <div
-              className="origin-top-left"
+              className="pointer-events-none origin-top-left"
               style={{
                 width: 1280,
                 height: 720,
@@ -115,9 +115,7 @@ export default function DeckListItem({
                 transformOrigin: 'top left',
               }}
             >
-              <div className="pointer-events-none">
-                <SlideThumb slide={firstSlide} theme={cardTheme} />
-              </div>
+              <SlideCanvas slide={firstSlide} theme={cardTheme} isThumb />
             </div>
           </div>
         ) : (
@@ -211,7 +209,7 @@ export default function DeckListItem({
         {menuOpen && (
           <div
             role="menu"
-            className="absolute right-0 top-full z-20 mt-1 w-40 overflow-hidden rounded-lg border border-gray-200 bg-white py-1 shadow-xl"
+            className="absolute right-0 top-full z-20 mt-1 w-44 overflow-hidden rounded-xl border border-gray-100 bg-white py-1.5 shadow-2xl shadow-black/10"
           >
             {isTrash ? (
               <>

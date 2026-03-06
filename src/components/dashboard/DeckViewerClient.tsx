@@ -420,7 +420,7 @@ export default function DeckViewerClient({
   }
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-[#f8f9fc]">
+    <div className="flex h-screen flex-col overflow-hidden bg-[#f5f6fa]">
       {/* ── Theme Modal ── */}
       {showThemeModal && (
         <div
@@ -451,7 +451,7 @@ export default function DeckViewerClient({
 
       {/* ── AI Generating Banner ── */}
       {isGenerating && (
-        <div className="flex h-10 shrink-0 items-center justify-center gap-2.5 bg-gradient-to-r from-[#0A0A0A] to-[#1a1a2e] text-sm font-medium text-white/90">
+        <div role="status" aria-live="polite" className="flex h-10 shrink-0 items-center justify-center gap-2.5 bg-gradient-to-r from-[#0A0A0A] to-[#1a1a2e] text-sm font-medium text-white/90">
           <Loader2 className="h-3.5 w-3.5 animate-spin text-brand-teal" />
           <span>AI is generating your slides — keep this tab open</span>
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-brand-teal" />
@@ -459,7 +459,7 @@ export default function DeckViewerClient({
       )}
 
       {/* ── Top Bar ── */}
-      <header className="flex h-14 shrink-0 items-center justify-between border-b border-gray-200/80 bg-white px-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+      <header className="flex h-14 shrink-0 items-center justify-between border-b border-gray-200/60 bg-white px-4 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
         <div className="flex items-center gap-3">
           <Link
             href="/dashboard"
@@ -523,7 +523,7 @@ export default function DeckViewerClient({
           {/* Share */}
           {isPublic ? (
             <div className="flex items-center gap-1">
-              <button onClick={handleCopyLink} className="flex items-center gap-1.5 rounded-lg bg-brand-teal/8 px-3 py-2 text-xs font-medium text-brand-teal transition-colors hover:bg-brand-teal/15">
+              <button onClick={handleCopyLink} className="flex items-center gap-1.5 rounded-lg bg-brand-teal/10 px-3 py-2 text-xs font-medium text-brand-teal transition-colors hover:bg-brand-teal/15">
                 <Globe className="h-3.5 w-3.5" />
                 Shared
                 <Link2 className="h-3 w-3 opacity-60" />
@@ -597,7 +597,7 @@ export default function DeckViewerClient({
                 ))}
 
                 {/* Skeleton slides during generation */}
-                {isGenerating && Array.from({ length: 2 }).map((_, i) => (
+                {isGenerating && Array.from({ length: Math.max(1, 3 - slides.length) }).map((_, i) => (
                   <div key={`skeleton-${i}`} className="aspect-[16/9] animate-pulse rounded-lg bg-gray-100" />
                 ))}
               </div>
@@ -619,7 +619,7 @@ export default function DeckViewerClient({
         {/* Center: Scrollable slide editor */}
         <main
           ref={scrollContainerRef}
-          className="flex-1 overflow-y-auto"
+          className="flex-1 overflow-y-auto scrollbar-thin"
         >
           <div className="mx-auto max-w-4xl px-6 py-8 lg:px-10">
             {/* Show sidebar toggle if hidden */}
@@ -727,7 +727,7 @@ export default function DeckViewerClient({
             {/* Skeleton slides during generation */}
             {isGenerating && slides.length > 0 && (
               <div className="mt-4 space-y-4">
-                {[1, 2].map((i) => (
+                {Array.from({ length: Math.max(1, 3 - slides.length) }).map((_, i) => (
                   <div key={`skel-${i}`} className="aspect-[16/9] animate-pulse rounded-2xl bg-white/80 shadow-sm ring-1 ring-black/[0.04]" />
                 ))}
               </div>

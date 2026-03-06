@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from 'react'
 import { signIn, useSession } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { AlertCircle, ArrowLeft, Loader2 } from 'lucide-react'
+import { AlertCircle, ArrowLeft, Loader2, Presentation } from 'lucide-react'
 
 const ERROR_MESSAGES: Record<string, string> = {
   OAuthSignin: 'Could not start sign-in. Please try again.',
@@ -53,8 +53,11 @@ function SignInContent() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-light-bg">
-      <div className="w-full max-w-sm">
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-light-bg">
+      {/* Decorative background gradient */}
+      <div className="pointer-events-none absolute -top-40 left-1/2 h-[500px] w-[700px] -translate-x-1/2 rounded-full bg-brand-blue/[0.06] blur-[100px]" aria-hidden="true" />
+
+      <div className="relative w-full max-w-sm px-4">
         {/* Back to home */}
         <Link
           href="/"
@@ -64,13 +67,18 @@ function SignInContent() {
           Back to home
         </Link>
 
-        <div className="w-full rounded-xl bg-white p-8 shadow-lg ring-1 ring-black/[0.06]">
+        <div className="w-full rounded-2xl bg-white p-8 shadow-xl shadow-black/[0.04] ring-1 ring-black/[0.06]">
           {/* Wordmark */}
-          <h1 className="text-center text-2xl font-bold text-brand-blue">
-            SlideX
+          <div className="flex justify-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-blue shadow-lg shadow-brand-blue/25">
+              <Presentation className="h-6 w-6 text-white" />
+            </div>
+          </div>
+          <h1 className="mt-4 text-center text-2xl font-bold text-dark">
+            Welcome to <span className="text-brand-blue">SlideX</span>
           </h1>
           <p className="mt-2 text-center text-sm text-grey">
-            Beautiful presentations from a single prompt
+            Sign in to create beautiful presentations
           </p>
 
           {/* Error banner */}
@@ -89,7 +97,7 @@ function SignInContent() {
             <button
               onClick={() => handleSignIn('google')}
               disabled={loadingProvider !== null}
-              className="flex w-full items-center justify-center gap-3 rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-dark transition-colors hover:bg-gray-50 disabled:opacity-60"
+              className="flex w-full items-center justify-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3.5 text-sm font-medium text-dark shadow-sm transition-all hover:bg-gray-50 hover:shadow-md disabled:opacity-60"
             >
               {loadingProvider === 'google' ? (
                 <Loader2 className="h-5 w-5 animate-spin text-grey" />
@@ -119,7 +127,7 @@ function SignInContent() {
             <button
               onClick={() => handleSignIn('github')}
               disabled={loadingProvider !== null}
-              className="flex w-full items-center justify-center gap-3 rounded-lg bg-dark px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-dark/90 disabled:opacity-60"
+              className="flex w-full items-center justify-center gap-3 rounded-xl bg-dark px-4 py-3.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-dark/90 hover:shadow-md disabled:opacity-60"
             >
               {loadingProvider === 'github' ? (
                 <Loader2 className="h-5 w-5 animate-spin" />

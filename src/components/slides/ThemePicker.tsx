@@ -1,6 +1,6 @@
 'use client'
 
-import { CheckCircle } from 'lucide-react'
+import { CheckCircle, Lock } from 'lucide-react'
 import { THEMES } from '@/lib/themes'
 import { cn } from '@/lib/utils'
 import type { Slide, Theme } from '@/types/deck'
@@ -9,6 +9,7 @@ import SlideCanvas from './SlideCanvas'
 interface ThemePickerProps {
   selectedTheme: string
   onSelect: (themeId: string) => void
+  isProUser?: boolean
 }
 
 // Mock slide for theme preview
@@ -25,23 +26,26 @@ const PREVIEW_SLIDE: Slide = {
 function ThemeCard({
   theme,
   isSelected,
+  isLocked,
   onSelect,
 }: {
   theme: Theme
   isSelected: boolean
+  isLocked: boolean
   onSelect: () => void
 }) {
   return (
     <button
       role="radio"
       aria-checked={isSelected}
-      aria-label={`${theme.name} theme`}
+      aria-label={`${theme.name} theme${isLocked ? ' (Pro)' : ''}`}
       onClick={onSelect}
       className={cn(
         'group relative flex flex-col items-center gap-2.5 rounded-xl p-2.5 transition-all',
         isSelected
           ? 'bg-brand-blue/5 ring-2 ring-brand-blue ring-offset-2'
           : 'hover:bg-gray-50',
+        isLocked && !isSelected && 'opacity-60',
       )}
     >
       {/* Mini preview — 1280×720 scaled to 160×90 via scale(0.125) */}
@@ -58,6 +62,15 @@ function ThemeCard({
             <CheckCircle className="h-6 w-6 text-brand-blue drop-shadow-sm" />
           </div>
         )}
+        {/* Lock overlay for non-pro users */}
+        {isLocked && !isSelected && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/5">
+            <div className="flex items-center gap-1 rounded-full bg-black/40 px-2 py-1 text-[10px] font-semibold text-white backdrop-blur-sm">
+              <Lock className="h-3 w-3" />
+              Pro
+            </div>
+          </div>
+        )}
       </div>
       <span className={cn(
         'text-xs font-semibold',
@@ -72,17 +85,22 @@ function ThemeCard({
 export default function ThemePicker({
   selectedTheme,
   onSelect,
+  isProUser = true,
 }: ThemePickerProps) {
   return (
     <div role="radiogroup" aria-label="Presentation theme" className="flex flex-wrap justify-center gap-3">
-      {THEMES.map((theme) => (
-        <ThemeCard
-          key={theme.id}
-          theme={theme}
-          isSelected={selectedTheme === theme.id}
-          onSelect={() => onSelect(theme.id)}
-        />
-      ))}
+      {THEMES.map((theme) => {
+        const isLocked = !isProUser && theme.id !== 'minimal'
+        return (
+          <ThemeCard
+            key={theme.id}
+            theme={theme}
+            isSelected={selectedTheme === theme.id}
+            isLocked={isLocked}
+            onSelect={() => onSelect(theme.id)}
+          />
+        )
+      })}
     </div>
   )
 }

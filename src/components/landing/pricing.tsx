@@ -57,7 +57,7 @@ const plans = [
 
 export function Pricing() {
   return (
-    <section className="bg-dark px-6 py-24">
+    <section id="pricing" className="bg-dark px-6 py-24">
       <div className="mx-auto max-w-7xl">
         <FadeUp className="mb-16 text-center">
           <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-medium text-gray-300">

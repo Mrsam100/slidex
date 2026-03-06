@@ -8,6 +8,7 @@ import { Testimonials } from '@/components/landing/testimonials'
 import { Pricing } from '@/components/landing/pricing'
 import { FAQ } from '@/components/landing/faq'
 import { LogoStrip } from '@/components/landing/logo-strip'
+import { BottomCTA } from '@/components/landing/bottom-cta'
 import { Footer } from '@/components/landing/footer'
 
 export const metadata: Metadata = {
@@ -33,6 +34,7 @@ export default function Home() {
       <Testimonials />
       <Pricing />
       <FAQ />
+      <BottomCTA />
       <Footer />
     </div>
   )

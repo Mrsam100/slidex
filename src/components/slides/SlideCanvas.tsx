@@ -1,5 +1,6 @@
 'use client'
 
+import { memo } from 'react'
 import type { Slide, Theme } from '@/types/deck'
 
 interface SlideCanvasProps {
@@ -8,7 +9,7 @@ interface SlideCanvasProps {
   isThumb?: boolean
 }
 
-export default function SlideCanvas({ slide, theme, isThumb }: SlideCanvasProps) {
+export default memo(function SlideCanvas({ slide, theme, isThumb }: SlideCanvasProps) {
   const t = isThumb
 
   return (
@@ -280,4 +281,4 @@ export default function SlideCanvas({ slide, theme, isThumb }: SlideCanvasProps)
       </span>
     </div>
   )
-}
+})

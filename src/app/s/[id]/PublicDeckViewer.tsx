@@ -69,10 +69,16 @@ export default function PublicDeckViewer({
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-[#0A0A0A]">
       {/* Top bar */}
-      <div className="flex h-14 shrink-0 items-center justify-center border-b border-white/10 px-4">
-        <h1 className="max-w-md truncate text-sm font-semibold text-white">
+      <div className="flex h-14 shrink-0 items-center justify-between border-b border-white/[0.06] px-6">
+        <Link href="/" className="text-sm font-bold tracking-tight text-brand-blue">
+          SlideX
+        </Link>
+        <h1 className="max-w-md truncate text-sm font-semibold text-white/90">
           {title}
         </h1>
+        <p className="text-xs tabular-nums text-white/40">
+          {currentIndex + 1} / {slides.length}
+        </p>
       </div>
 
       {/* Main slide area */}
@@ -91,7 +97,8 @@ export default function PublicDeckViewer({
           className="relative aspect-video w-full max-w-5xl overflow-hidden rounded-xl shadow-2xl"
         >
           <div
-            className="absolute left-0 top-0 origin-top-left"
+            key={currentSlide.id}
+            className="absolute left-0 top-0 origin-top-left animate-in fade-in duration-300"
             style={{ width: 1280, height: 720, transform: `scale(${slideScale})` }}
           >
             <SlideCanvas slide={currentSlide} theme={theme} />
@@ -108,13 +115,8 @@ export default function PublicDeckViewer({
         </button>
       </div>
 
-      {/* Slide counter */}
-      <p className="mb-2 text-center text-sm text-white/50">
-        {currentIndex + 1} / {slides.length}
-      </p>
-
       {/* Thumbnail strip */}
-      <div className="shrink-0 border-t border-white/10 bg-[#0A0A0A] px-4 py-3">
+      <div className="shrink-0 border-t border-white/[0.06] bg-[#0A0A0A] px-4 py-3">
         <div
           ref={thumbStripRef}
           className="flex gap-3 overflow-x-auto scrollbar-none"
@@ -132,12 +134,12 @@ export default function PublicDeckViewer({
       </div>
 
       {/* SlideX branding banner */}
-      <div className="flex items-center justify-center border-t border-white/10 bg-[#0A0A0A] py-2.5">
+      <div className="flex items-center justify-center border-t border-white/[0.06] bg-[#050505] py-2.5">
         <Link
           href="/"
-          className="text-xs text-white/40 transition-colors hover:text-white/60"
+          className="flex items-center gap-1.5 text-xs text-white/35 transition-colors hover:text-white/60"
         >
-          Made with <span className="font-semibold text-brand-blue">SlideX</span> &middot; Create your own &rarr;
+          Made with <span className="font-bold text-brand-blue">SlideX</span> <span className="text-white/20">&middot;</span> Create your own &rarr;
         </Link>
       </div>
     </div>

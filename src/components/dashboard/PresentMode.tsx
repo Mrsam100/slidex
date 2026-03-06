@@ -121,7 +121,8 @@ export default function PresentMode({
           className="relative aspect-video w-full max-w-6xl overflow-hidden rounded-xl shadow-2xl shadow-black/50"
         >
           <div
-            className="absolute left-1/2 top-1/2 origin-center"
+            key={currentSlide.id}
+            className="absolute left-1/2 top-1/2 origin-center animate-in fade-in duration-300"
             style={{ width: 1280, height: 720, transform: `translate(-50%, -50%) scale(${slideScale})` }}
           >
             <SlideCanvas slide={currentSlide} theme={theme} />

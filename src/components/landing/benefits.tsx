@@ -33,7 +33,7 @@ const benefits = [
     icon: DollarSign,
     title: 'Free to Start',
     description:
-      'Create unlimited decks at zero cost. No credit card, no limits — just great presentations.',
+      'Get started with 5 free decks per month. No credit card required — just great presentations.',
   },
   {
     icon: BarChart3,

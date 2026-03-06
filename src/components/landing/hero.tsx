@@ -7,7 +7,7 @@ import { PulseGlow, Float, TextScramble, Typewriter } from './motion'
 export function Hero() {
   return (
     <section className="relative overflow-hidden bg-dark px-6 py-24 text-center md:py-36">
-      {/* Purple glowing orb — animated pulse + float */}
+      {/* Glowing orb — animated pulse + float */}
       <Float duration={8}>
         <PulseGlow>
           <div

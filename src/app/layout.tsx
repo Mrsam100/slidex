@@ -23,8 +23,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${dmSans.variable} font-sans antialiased`}>
+        <a
+          href="#main-content"
+          className="fixed left-2 top-2 z-[100] -translate-y-16 rounded-lg bg-brand-blue px-4 py-2 text-sm font-semibold text-white shadow-lg transition-transform focus:translate-y-0"
+        >
+          Skip to content
+        </a>
         <Providers>
-          {children}
+          <div id="main-content">{children}</div>
           <Toaster richColors position="bottom-right" />
         </Providers>
       </body>
