@@ -77,7 +77,7 @@ export function FAQ() {
                 >
                   <button
                     onClick={() => setOpenIndex(openIndex === i ? null : i)}
-                    className="flex w-full items-center justify-between px-6 py-4 text-left"
+                    className="flex w-full items-center justify-between px-6 py-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#111] rounded-t-xl"
                   >
                     <span className="text-sm font-medium text-white">
                       {faq.question}

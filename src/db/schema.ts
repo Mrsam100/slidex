@@ -20,6 +20,7 @@ export const users = pgTable(
       .$defaultFn(() => createId()),
     name: text('name'),
     email: text('email').notNull(),
+    password: text('password'),
     emailVerified: timestamp('emailVerified', { mode: 'date' }),
     image: text('image'),
     stripeCustomerId: text('stripe_customer_id'),

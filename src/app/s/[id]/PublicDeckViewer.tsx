@@ -82,7 +82,7 @@ export default function PublicDeckViewer({
       </div>
 
       {/* Main slide area */}
-      <div className="relative flex flex-1 items-center justify-center px-16">
+      <div className="relative flex flex-1 items-center justify-center px-4 sm:px-8 md:px-16">
         <button
           onClick={goPrev}
           disabled={currentIndex === 0}

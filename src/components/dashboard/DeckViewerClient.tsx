@@ -494,18 +494,18 @@ export default function DeckViewerClient({
           </span>
         </div>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1 sm:gap-1.5">
           <button
             onClick={() => { setPendingThemeId(activeTheme.id); setShowThemeModal(true) }}
-            className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium text-mid transition-colors hover:bg-gray-100 hover:text-dark"
+            className="flex items-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium text-mid transition-colors hover:bg-gray-100 hover:text-dark sm:px-3"
           >
             <Palette className="h-3.5 w-3.5" />
-            Theme
+            <span className="hidden sm:inline">Theme</span>
           </button>
           <button
             onClick={handleExportPDF}
             disabled={isExporting || slides.length === 0}
-            className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium text-mid transition-colors hover:bg-gray-100 hover:text-dark disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium text-mid transition-colors hover:bg-gray-100 hover:text-dark disabled:opacity-50 sm:px-3"
           >
             {isExporting ? (
               <>
@@ -515,7 +515,7 @@ export default function DeckViewerClient({
             ) : (
               <>
                 <FileDown className="h-3.5 w-3.5" />
-                Export
+                <span className="hidden sm:inline">Export</span>
               </>
             )}
           </button>
@@ -523,9 +523,9 @@ export default function DeckViewerClient({
           {/* Share */}
           {isPublic ? (
             <div className="flex items-center gap-1">
-              <button onClick={handleCopyLink} className="flex items-center gap-1.5 rounded-lg bg-brand-teal/10 px-3 py-2 text-xs font-medium text-brand-teal transition-colors hover:bg-brand-teal/15">
+              <button onClick={handleCopyLink} className="flex items-center gap-1.5 rounded-lg bg-brand-teal/10 px-2 py-2 text-xs font-medium text-brand-teal transition-colors hover:bg-brand-teal/15 sm:px-3">
                 <Globe className="h-3.5 w-3.5" />
-                Shared
+                <span className="hidden sm:inline">Shared</span>
                 <Link2 className="h-3 w-3 opacity-60" />
               </button>
               <button onClick={handleToggleShare} disabled={isTogglingShare} className="rounded-lg p-2 text-grey transition-colors hover:bg-gray-100 disabled:opacity-50" title="Make private">
@@ -533,22 +533,22 @@ export default function DeckViewerClient({
               </button>
             </div>
           ) : (
-            <button onClick={handleToggleShare} disabled={isTogglingShare} className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium text-mid transition-colors hover:bg-gray-100 hover:text-dark disabled:opacity-50">
+            <button onClick={handleToggleShare} disabled={isTogglingShare} className="flex items-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium text-mid transition-colors hover:bg-gray-100 hover:text-dark disabled:opacity-50 sm:px-3">
               <Share2 className="h-3.5 w-3.5" />
-              Share
+              <span className="hidden sm:inline">Share</span>
             </button>
           )}
 
-          <div className="mx-1 h-5 w-px bg-gray-200" />
+          <div className="mx-0.5 h-5 w-px bg-gray-200 sm:mx-1" />
 
           {/* Present button */}
           <button
             onClick={() => setShowPresent(true)}
             disabled={slides.length === 0}
-            className="flex items-center gap-1.5 rounded-xl bg-brand-blue px-5 py-2 text-xs font-semibold text-white shadow-md shadow-brand-blue/20 transition-all hover:-translate-y-px hover:bg-brand-blue/90 hover:shadow-lg disabled:translate-y-0 disabled:opacity-50 disabled:shadow-none"
+            className="flex items-center gap-1.5 rounded-xl bg-brand-blue px-3 py-2 text-xs font-semibold text-white shadow-md shadow-brand-blue/20 transition-all hover:-translate-y-px hover:bg-brand-blue/90 hover:shadow-lg disabled:translate-y-0 disabled:opacity-50 disabled:shadow-none sm:px-5"
           >
             <Play className="h-3.5 w-3.5" fill="currentColor" />
-            Present
+            <span className="hidden xs:inline">Present</span>
           </button>
         </div>
       </header>

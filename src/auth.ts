@@ -1,7 +1,10 @@
 import NextAuth from 'next-auth'
 import { DrizzleAdapter } from '@auth/drizzle-adapter'
+import Credentials from 'next-auth/providers/credentials'
 import Google from 'next-auth/providers/google'
 import GitHub from 'next-auth/providers/github'
+import bcrypt from 'bcryptjs'
+import { eq } from 'drizzle-orm'
 import { db } from '@/db'
 import { users, accounts, sessions, verificationTokens } from '@/db/schema'
 
@@ -12,7 +15,41 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     sessionsTable: sessions,
     verificationTokensTable: verificationTokens,
   }),
-  providers: [Google, GitHub],
+  providers: [
+    Google,
+    GitHub,
+    Credentials({
+      name: 'Email',
+      credentials: {
+        email: { label: 'Email', type: 'email' },
+        password: { label: 'Password', type: 'password' },
+      },
+      async authorize(credentials) {
+        const email = credentials?.email as string | undefined
+        const password = credentials?.password as string | undefined
+
+        if (!email || !password) return null
+
+        const user = await db
+          .select()
+          .from(users)
+          .where(eq(users.email, email))
+          .then((res) => res[0])
+
+        if (!user || !user.password) return null
+
+        const isValid = await bcrypt.compare(password, user.password)
+        if (!isValid) return null
+
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          image: user.image,
+        }
+      },
+    }),
+  ],
   session: { strategy: 'jwt' },
   pages: {
     signIn: '/signin',
@@ -37,7 +74,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       const isProtected = protectedRoutes.some((r) => pathname.startsWith(r))
 
       if (isProtected && !session?.user) {
-        return false // NextAuth redirects to signIn page
+        return false
       }
 
       return true

@@ -37,6 +37,7 @@ export function Footer() {
             >
               <Link
                 href={item.href}
+                {...(item.href.startsWith('mailto:') ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
                 className="text-sm text-gray-400 transition-colors hover:text-white"
               >
                 {item.label}

@@ -155,12 +155,7 @@ async function handleRewrite(
       })
       rewritten = parseJSON(retry.text) as Record<string, unknown>
     }
-  } catch (error) {
-    console.error('[rewrite] AI generation failed:', {
-      slideId: id,
-      userId,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    })
+  } catch {
     return NextResponse.json(
       { error: 'AI rewrite failed' },
       { status: 500 },

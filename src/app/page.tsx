@@ -19,6 +19,7 @@ export const metadata: Metadata = {
     title: 'SlideX AI — Beautiful Presentations in Seconds',
     description:
       'Type a topic. Get a complete, designed slide deck. Free to start.',
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'SlideX AI' }],
   },
 }
 

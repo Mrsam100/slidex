@@ -1,61 +1,69 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { Check } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { FadeUp, FadeScale } from './motion'
 
-const plans = [
-  {
-    name: 'Free',
-    price: '$0',
-    period: '/month',
-    description: 'Great for getting started',
-    features: [
-      '5 decks per month',
-      '1 theme (Minimal)',
-      'PDF export (watermarked)',
-      'Public share links',
-    ],
-    cta: 'Get started',
-    href: '/generate',
-    highlighted: false,
-  },
-  {
-    name: 'Pro',
-    price: '$8',
-    period: '/month',
-    description: 'For power users and teams',
-    features: [
-      'Unlimited decks',
-      'All 5 themes',
-      'AI rewrite',
-      'PDF export (no watermark)',
-      'Priority generation',
-    ],
-    cta: 'Upgrade to Pro',
-    href: '/settings',
-    highlighted: true,
-    badge: 'Most popular',
-  },
-  {
-    name: 'Teams',
-    price: 'Soon',
-    period: '',
-    description: 'For organizations',
-    features: [
-      'Everything in Pro',
-      'Team workspace',
-      'Shared templates',
-      'Admin controls',
-    ],
-    cta: 'Join waitlist',
-    href: '#',
-    highlighted: false,
-    disabled: true,
-  },
-]
+function getPlans(isAnnual: boolean) {
+  return [
+    {
+      name: 'Free',
+      price: '$0',
+      period: '/month',
+      description: 'Great for getting started',
+      features: [
+        '5 decks per month',
+        '1 theme (Minimal)',
+        'PDF export (watermarked)',
+        'Public share links',
+      ],
+      cta: 'Get started',
+      href: '/generate',
+      highlighted: false,
+    },
+    {
+      name: 'Pro',
+      price: isAnnual ? '$64' : '$8',
+      period: isAnnual ? '/year' : '/month',
+      savings: isAnnual ? 'Save $32/year' : null,
+      description: 'For power users and teams',
+      features: [
+        'Unlimited decks',
+        'All 5 themes',
+        'AI rewrite',
+        'PDF export (no watermark)',
+        'Priority generation',
+      ],
+      cta: 'Upgrade to Pro',
+      href: '/settings',
+      highlighted: true,
+      badge: 'Most popular',
+    },
+    {
+      name: 'Teams',
+      price: 'Soon',
+      period: '',
+      description: 'For organizations',
+      features: [
+        'Everything in Pro',
+        'Team workspace',
+        'Shared templates',
+        'Admin controls',
+      ],
+      cta: 'Join waitlist',
+      href: '',
+      highlighted: false,
+      disabled: true,
+    },
+  ]
+}
 
 export function Pricing() {
+  const [isAnnual, setIsAnnual] = useState(false)
+  const plans = getPlans(isAnnual)
+
   return (
     <section id="pricing" className="bg-dark px-6 py-24">
       <div className="mx-auto max-w-7xl">
@@ -69,6 +77,29 @@ export function Pricing() {
           <p className="mx-auto mt-4 max-w-xl text-gray-400">
             Start free. Upgrade when you need more.
           </p>
+
+          {/* Billing toggle */}
+          <div className="mx-auto mt-8 flex items-center justify-center gap-3">
+            <span className={cn('text-sm', isAnnual ? 'text-gray-500' : 'font-medium text-white')}>Monthly</span>
+            <button
+              onClick={() => setIsAnnual(!isAnnual)}
+              className="relative h-7 w-12 rounded-full bg-white/10 transition-colors hover:bg-white/15"
+              aria-label={isAnnual ? 'Switch to monthly billing' : 'Switch to annual billing'}
+            >
+              <span
+                className={cn(
+                  'absolute top-0.5 h-6 w-6 rounded-full bg-brand-blue transition-transform',
+                  isAnnual ? 'translate-x-5' : 'translate-x-0.5',
+                )}
+              />
+            </button>
+            <span className={cn('text-sm', isAnnual ? 'font-medium text-white' : 'text-gray-500')}>
+              Annual
+              <span className="ml-1.5 rounded-full bg-brand-teal/20 px-2 py-0.5 text-xs font-medium text-brand-teal">
+                Save 33%
+              </span>
+            </span>
+          </div>
         </FadeUp>
 
         <div className="grid gap-6 md:grid-cols-3">
@@ -96,6 +127,9 @@ export function Pricing() {
                     <span className="text-sm text-gray-400">{plan.period}</span>
                   )}
                 </div>
+                {'savings' in plan && plan.savings && (
+                  <span className="mt-1.5 text-xs font-medium text-brand-teal">{plan.savings}</span>
+                )}
 
                 <ul className="mt-8 flex-1 space-y-3">
                   {plan.features.map((feature) => (
