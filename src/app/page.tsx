@@ -5,6 +5,7 @@ import { Features } from '@/components/landing/features'
 import { Benefits } from '@/components/landing/benefits'
 import { HowItWorks } from '@/components/landing/how-it-works'
 import { Testimonials } from '@/components/landing/testimonials'
+import { Pricing } from '@/components/landing/pricing'
 import { FAQ } from '@/components/landing/faq'
 import { LogoStrip } from '@/components/landing/logo-strip'
 import { Footer } from '@/components/landing/footer'
@@ -30,6 +31,7 @@ export default function Home() {
       <Benefits />
       <HowItWorks />
       <Testimonials />
+      <Pricing />
       <FAQ />
       <Footer />
     </div>

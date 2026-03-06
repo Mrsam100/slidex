@@ -46,9 +46,9 @@ export function Navbar() {
           >
             <Link
               href="/generate"
-              className="rounded-lg bg-purple-600 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-purple-500"
+              className="rounded-lg bg-brand-blue px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-blue/90"
             >
-              Get started
+              Get started free
             </Link>
           </motion.div>
         </div>
@@ -83,6 +83,13 @@ export function Navbar() {
               animate={{ y: 0 }}
               className="flex flex-col gap-4 px-6 py-4"
             >
+              <a
+                href="#how-it-works"
+                className="text-sm text-gray-300 transition-colors hover:text-white"
+                onClick={() => setMobileOpen(false)}
+              >
+                How it works
+              </a>
               <Link
                 href="/signin"
                 className="text-sm text-gray-300 transition-colors hover:text-white"
@@ -92,10 +99,10 @@ export function Navbar() {
               </Link>
               <Link
                 href="/generate"
-                className="rounded-lg bg-purple-600 px-5 py-2 text-center text-sm font-semibold text-white transition-colors hover:bg-purple-500"
+                className="rounded-lg bg-brand-blue px-5 py-2 text-center text-sm font-semibold text-white transition-colors hover:bg-brand-blue/90"
                 onClick={() => setMobileOpen(false)}
               >
-                Get started
+                Get started free
               </Link>
             </motion.div>
           </motion.div>

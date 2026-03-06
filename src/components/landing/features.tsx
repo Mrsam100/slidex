@@ -28,7 +28,7 @@ export function Features() {
           <SlideIn from="left">
             <MagneticCard className="h-full">
               <CursorSpotlight className="h-full rounded-2xl">
-                <div className="h-full rounded-2xl border border-white/10 bg-[#111] p-8 transition-colors hover:border-purple-500/30">
+                <div className="h-full rounded-2xl border border-white/10 bg-[#111] p-8 transition-colors hover:border-brand-blue/30">
                   <div className="mb-6 rounded-xl border border-white/10 bg-[#0A0A0A] p-4">
                     <div className="mb-3 flex items-center gap-2">
                       <div className="text-xs font-medium text-white">
@@ -37,7 +37,7 @@ export function Features() {
                       <motion.div
                         animate={{ opacity: [1, 0.5, 1] }}
                         transition={{ duration: 1.5, repeat: Infinity }}
-                        className="rounded bg-purple-500/20 px-2 py-0.5 text-xs text-purple-300"
+                        className="rounded bg-brand-blue/20 px-2 py-0.5 text-xs text-blue-300"
                       >
                         Generating
                       </motion.div>
@@ -60,7 +60,7 @@ export function Features() {
                           <motion.div
                             animate={{ scale: [1, 1.4, 1] }}
                             transition={{ duration: 2, repeat: Infinity, delay: i * 0.3 }}
-                            className="h-2 w-2 rounded-full bg-purple-500"
+                            className="h-2 w-2 rounded-full bg-brand-blue"
                           />
                           <span className="text-sm text-gray-300">{item}</span>
                         </motion.div>
@@ -76,7 +76,7 @@ export function Features() {
           <SlideIn from="right">
             <MagneticCard className="h-full">
               <CursorSpotlight className="h-full rounded-2xl">
-                <div className="flex h-full flex-col justify-center rounded-2xl border border-white/10 bg-[#111] p-8 transition-colors hover:border-purple-500/30">
+                <div className="flex h-full flex-col justify-center rounded-2xl border border-white/10 bg-[#111] p-8 transition-colors hover:border-brand-blue/30">
                   <span className="mb-4 inline-flex w-fit items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-gray-300">
                     AI-Powered
                   </span>
@@ -89,7 +89,7 @@ export function Features() {
                   </p>
                   <div className="mt-6 flex flex-wrap gap-2">
                     <motion.span
-                      whileHover={{ scale: 1.1, backgroundColor: 'rgba(168,85,247,0.15)' }}
+                      whileHover={{ scale: 1.1, backgroundColor: 'rgba(0,71,224,0.15)' }}
                       transition={{ type: 'spring', stiffness: 400 }}
                       className="cursor-default rounded-full border border-white/10 bg-white/5 px-3 py-1 text-sm text-gray-300"
                     >
@@ -97,7 +97,7 @@ export function Features() {
                       Smart Outlines
                     </motion.span>
                     <motion.span
-                      whileHover={{ scale: 1.1, backgroundColor: 'rgba(168,85,247,0.15)' }}
+                      whileHover={{ scale: 1.1, backgroundColor: 'rgba(0,71,224,0.15)' }}
                       transition={{ type: 'spring', stiffness: 400 }}
                       className="cursor-default rounded-full border border-white/10 bg-white/5 px-3 py-1 text-sm text-gray-300"
                     >
@@ -116,7 +116,7 @@ export function Features() {
           <SlideIn from="left" delay={0.1}>
             <MagneticCard className="h-full">
               <CursorSpotlight className="h-full rounded-2xl">
-                <div className="flex h-full flex-col justify-center rounded-2xl border border-white/10 bg-[#111] p-8 transition-colors hover:border-purple-500/30">
+                <div className="flex h-full flex-col justify-center rounded-2xl border border-white/10 bg-[#111] p-8 transition-colors hover:border-brand-blue/30">
                   <span className="mb-4 inline-flex w-fit items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-gray-300">
                     Smart Layouts
                   </span>
@@ -129,7 +129,7 @@ export function Features() {
                   </p>
                   <div className="mt-6 flex flex-wrap gap-2">
                     <motion.span
-                      whileHover={{ scale: 1.1, backgroundColor: 'rgba(168,85,247,0.15)' }}
+                      whileHover={{ scale: 1.1, backgroundColor: 'rgba(0,71,224,0.15)' }}
                       transition={{ type: 'spring', stiffness: 400 }}
                       className="cursor-default rounded-full border border-white/10 bg-white/5 px-3 py-1 text-sm text-gray-300"
                     >
@@ -137,7 +137,7 @@ export function Features() {
                       4 Layout Types
                     </motion.span>
                     <motion.span
-                      whileHover={{ scale: 1.1, backgroundColor: 'rgba(168,85,247,0.15)' }}
+                      whileHover={{ scale: 1.1, backgroundColor: 'rgba(0,71,224,0.15)' }}
                       transition={{ type: 'spring', stiffness: 400 }}
                       className="cursor-default rounded-full border border-white/10 bg-white/5 px-3 py-1 text-sm text-gray-300"
                     >
@@ -153,15 +153,15 @@ export function Features() {
           <SlideIn from="right" delay={0.1}>
             <MagneticCard className="h-full">
               <CursorSpotlight className="h-full rounded-2xl">
-                <div className="h-full rounded-2xl border border-white/10 bg-[#111] p-8 transition-colors hover:border-purple-500/30">
+                <div className="h-full rounded-2xl border border-white/10 bg-[#111] p-8 transition-colors hover:border-brand-blue/30">
                   <div className="rounded-xl border border-white/10 bg-[#0A0A0A] p-4">
                     <div className="mb-4 flex items-center gap-3">
                       <motion.div
                         animate={{ rotate: [0, 360] }}
                         transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
-                        className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-500/20"
+                        className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-blue/20"
                       >
-                        <Share2 className="h-4 w-4 text-purple-400" />
+                        <Share2 className="h-4 w-4 text-brand-teal" />
                       </motion.div>
                       <div className="text-sm font-medium text-white">
                         Export &amp; Share

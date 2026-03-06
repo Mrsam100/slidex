@@ -21,8 +21,10 @@ export default function PresentMode({
 }: PresentModeProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex)
   const [slideScale, setSlideScale] = useState(1)
+  const [showControls, setShowControls] = useState(true)
   const containerRef = useRef<HTMLDivElement>(null)
   const thumbStripRef = useRef<HTMLDivElement>(null)
+  const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Responsive slide scaling
   useEffect(() => {
@@ -52,12 +54,26 @@ export default function PresentMode({
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
       if (e.key === 'Escape') onClose()
-      else if (e.key === 'ArrowRight') goNext()
+      else if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); goNext() }
       else if (e.key === 'ArrowLeft') goPrev()
     }
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
   }, [goNext, goPrev, onClose])
+
+  // Auto-hide controls after inactivity
+  useEffect(() => {
+    function handleMouseMove() {
+      setShowControls(true)
+      if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current)
+      hideTimeoutRef.current = setTimeout(() => setShowControls(false), 3000)
+    }
+    window.addEventListener('mousemove', handleMouseMove)
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+      if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current)
+    }
+  }, [])
 
   // Scroll active thumbnail into view
   useEffect(() => {
@@ -71,15 +87,18 @@ export default function PresentMode({
   if (!currentSlide) return null
 
   return (
-    <div className="fixed inset-0 z-[70] flex flex-col bg-[#0A0A0A]">
-      {/* Close button */}
-      <div className="flex h-12 shrink-0 items-center justify-between px-4">
-        <p className="text-sm text-white/50">
-          {currentIndex + 1} / {slides.length}
+    <div
+      className="fixed inset-0 z-[70] flex flex-col bg-[#0A0A0A]"
+      onClick={goNext}
+    >
+      {/* Top bar — auto-hides */}
+      <div className={`flex h-12 shrink-0 items-center justify-between px-4 transition-opacity duration-500 ${showControls ? 'opacity-100' : 'opacity-0'}`}>
+        <p className="rounded-lg bg-white/5 px-3 py-1 text-sm tabular-nums text-white/70">
+          {currentIndex + 1} <span className="text-white/30">/</span> {slides.length}
         </p>
         <button
-          onClick={onClose}
-          className="rounded-lg p-1.5 text-white/50 transition-colors hover:bg-white/10 hover:text-white"
+          onClick={(e) => { e.stopPropagation(); onClose() }}
+          className="rounded-lg p-2 text-white/50 transition-colors hover:bg-white/10 hover:text-white"
           aria-label="Exit presentation"
         >
           <X className="h-5 w-5" />
@@ -89,41 +108,44 @@ export default function PresentMode({
       {/* Main slide area */}
       <div className="relative flex flex-1 items-center justify-center px-16">
         <button
-          onClick={goPrev}
+          onClick={(e) => { e.stopPropagation(); goPrev() }}
           disabled={currentIndex === 0}
           aria-label="Previous slide"
-          className="absolute left-4 z-10 rounded-full bg-white/5 p-2 text-white/50 transition-all hover:bg-white/10 hover:text-white disabled:invisible"
+          className={`absolute left-4 z-10 rounded-full bg-white/5 p-3 text-white/50 transition-all hover:bg-white/10 hover:text-white disabled:invisible ${showControls ? 'opacity-100' : 'opacity-0'}`}
         >
           <ChevronLeft className="h-6 w-6" />
         </button>
 
         <div
           ref={containerRef}
-          className="relative aspect-video w-full max-w-5xl overflow-hidden rounded-xl shadow-2xl"
+          className="relative aspect-video w-full max-w-6xl overflow-hidden rounded-xl shadow-2xl shadow-black/50"
         >
           <div
-            className="absolute left-0 top-0 origin-top-left"
-            style={{ width: 1280, height: 720, transform: `scale(${slideScale})` }}
+            className="absolute left-1/2 top-1/2 origin-center"
+            style={{ width: 1280, height: 720, transform: `translate(-50%, -50%) scale(${slideScale})` }}
           >
             <SlideCanvas slide={currentSlide} theme={theme} />
           </div>
         </div>
 
         <button
-          onClick={goNext}
+          onClick={(e) => { e.stopPropagation(); goNext() }}
           disabled={currentIndex === slides.length - 1}
           aria-label="Next slide"
-          className="absolute right-4 z-10 rounded-full bg-white/5 p-2 text-white/50 transition-all hover:bg-white/10 hover:text-white disabled:invisible"
+          className={`absolute right-4 z-10 rounded-full bg-white/5 p-3 text-white/50 transition-all hover:bg-white/10 hover:text-white disabled:invisible ${showControls ? 'opacity-100' : 'opacity-0'}`}
         >
           <ChevronRight className="h-6 w-6" />
         </button>
       </div>
 
-      {/* Thumbnail strip */}
-      <div className="shrink-0 border-t border-white/10 px-4 py-3">
+      {/* Thumbnail strip — auto-hides */}
+      <div
+        className={`shrink-0 border-t border-white/5 bg-black/40 px-4 py-2.5 backdrop-blur-sm transition-all duration-500 ${showControls ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'}`}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div
           ref={thumbStripRef}
-          className="flex gap-3 overflow-x-auto scrollbar-none"
+          className="flex justify-center gap-2 overflow-x-auto scrollbar-none"
         >
           {slides.map((slide, i) => (
             <SlideThumb
@@ -135,6 +157,14 @@ export default function PresentMode({
             />
           ))}
         </div>
+      </div>
+
+      {/* Progress bar at very bottom */}
+      <div className="h-0.5 shrink-0 bg-white/5">
+        <div
+          className="h-full bg-brand-blue transition-all duration-300"
+          style={{ width: `${((currentIndex + 1) / slides.length) * 100}%` }}
+        />
       </div>
     </div>
   )

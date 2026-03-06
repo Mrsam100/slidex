@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
-import { and, asc, eq, isNull } from 'drizzle-orm'
+import { and, asc, eq, gte, isNull, sql } from 'drizzle-orm'
 
 import { auth } from '@/auth'
 import { db } from '@/db'
-import { decks, slides } from '@/db/schema'
+import { decks, slides, users } from '@/db/schema'
 
 export const dynamic = 'force-dynamic'
 
@@ -46,6 +46,37 @@ export async function POST(
     )
   }
 
+  // Free tier limit: max 5 decks per month
+  const [user] = await db
+    .select({ subscriptionStatus: users.subscriptionStatus })
+    .from(users)
+    .where(eq(users.id, session.user.id))
+    .limit(1)
+
+  if (!user || user.subscriptionStatus === 'free') {
+    const startOfMonth = new Date()
+    startOfMonth.setDate(1)
+    startOfMonth.setHours(0, 0, 0, 0)
+
+    const [deckCount] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(decks)
+      .where(
+        and(
+          eq(decks.userId, session.user.id),
+          isNull(decks.deletedAt),
+          gte(decks.createdAt, startOfMonth),
+        ),
+      )
+
+    if (deckCount && deckCount.count >= 5) {
+      return NextResponse.json(
+        { error: 'limit_reached' },
+        { status: 403 },
+      )
+    }
+  }
+
   // Fetch slides before transaction
   const originalSlides = await db
     .select({
@@ -60,6 +91,7 @@ export async function POST(
       attribution: slides.attribution,
       speakerNotes: slides.speakerNotes,
       imagePrompt: slides.imagePrompt,
+      imageUrl: slides.imageUrl,
     })
     .from(slides)
     .where(eq(slides.deckId, id))
@@ -102,6 +134,7 @@ export async function POST(
           attribution: s.attribution,
           speakerNotes: s.speakerNotes,
           imagePrompt: s.imagePrompt,
+          imageUrl: s.imageUrl,
         })),
       )
     }

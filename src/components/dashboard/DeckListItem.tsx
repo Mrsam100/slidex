@@ -77,15 +77,17 @@ export default function DeckListItem({
     setIsRenaming(false)
   }
 
+  const isClickable = !isTrash && deck.status !== 'draft'
+
   function handleRowClick() {
-    if (isRenaming || isTrash || deck.status !== 'done') return
+    if (isRenaming || !isClickable) return
     router.push(`/deck/${deck.id}`)
   }
 
   return (
     <div
-      role={deck.status === 'done' && !isTrash ? 'link' : undefined}
-      tabIndex={deck.status === 'done' && !isTrash ? 0 : undefined}
+      role={isClickable ? 'link' : undefined}
+      tabIndex={isClickable ? 0 : undefined}
       onClick={handleRowClick}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -95,13 +97,13 @@ export default function DeckListItem({
       }}
       className={cn(
         'group flex items-center gap-4 rounded-xl border bg-white px-4 py-3 transition-all duration-150',
-        deck.status === 'done' && !isTrash
+        isClickable
           ? 'cursor-pointer border-gray-100 hover:border-brand-blue/20 hover:bg-gray-50/50 hover:shadow-sm'
           : 'cursor-default border-gray-100',
       )}
     >
       {/* Small thumbnail */}
-      <div className="relative h-14 w-24 shrink-0 overflow-hidden rounded-lg bg-gray-50">
+      <div className="relative aspect-[16/9] w-24 shrink-0 overflow-hidden rounded-lg bg-gray-50">
         {firstSlide ? (
           <div className="absolute inset-0 overflow-hidden">
             <div

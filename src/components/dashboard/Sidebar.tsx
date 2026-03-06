@@ -40,7 +40,7 @@ interface NavItem {
 function useIsMac() {
   const [isMac, setIsMac] = useState(false)
   useEffect(() => {
-    setIsMac(navigator.platform.toUpperCase().includes('MAC'))
+    setIsMac(/mac/i.test(navigator.userAgent))
   }, [])
   return isMac
 }
@@ -174,8 +174,8 @@ export default function Sidebar({ user }: SidebarProps) {
   const sidebarContent = (
     <>
       {/* Logo */}
-      <div className="flex h-14 items-center justify-between px-6">
-        <Link href="/dashboard" className="text-xl font-bold text-brand-blue">
+      <div className="flex h-16 items-center justify-between px-6">
+        <Link href="/dashboard" className="text-xl font-bold tracking-tight text-brand-blue">
           SlideX
         </Link>
         <button

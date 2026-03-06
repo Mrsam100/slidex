@@ -77,16 +77,18 @@ export default function DeckCard({
     setIsRenaming(false)
   }
 
+  const isClickable = !isTrash && deck.status !== 'draft'
+
   function handleCardClick() {
-    if (isRenaming || isTrash || deck.status !== 'done') return
+    if (isRenaming || !isClickable) return
     router.push(`/deck/${deck.id}`)
   }
 
   return (
     <div className="group relative">
       <div
-        role={deck.status === 'done' && !isTrash ? 'link' : undefined}
-        tabIndex={deck.status === 'done' && !isTrash ? 0 : undefined}
+        role={isClickable ? 'link' : undefined}
+        tabIndex={isClickable ? 0 : undefined}
         onClick={handleCardClick}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
@@ -95,14 +97,14 @@ export default function DeckCard({
           }
         }}
         className={cn(
-          'w-full overflow-hidden rounded-xl border bg-white text-left transition-all duration-200',
-          deck.status === 'done' && !isTrash
-            ? 'cursor-pointer border-gray-100 hover:scale-[1.02] hover:border-brand-blue/20 hover:shadow-lg'
-            : 'cursor-default border-gray-100',
+          'w-full overflow-hidden rounded-2xl border bg-white text-left shadow-sm transition-all duration-300',
+          isClickable
+            ? 'cursor-pointer border-gray-100/80 hover:-translate-y-1 hover:border-brand-blue/20 hover:shadow-xl hover:shadow-brand-blue/5'
+            : 'cursor-default border-gray-100/80',
         )}
       >
         {/* Thumbnail */}
-        <div className="relative aspect-[16/9.5] w-full overflow-hidden bg-gray-50">
+        <div className="relative aspect-[16/9] w-full overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100/50">
           {firstSlide ? (
             <div className="absolute inset-0 overflow-hidden">
               <div
@@ -168,7 +170,7 @@ export default function DeckCard({
         </div>
 
         {/* Info section */}
-        <div className="flex items-start justify-between gap-2 p-3">
+        <div className="flex items-start justify-between gap-2 px-4 py-3.5">
           <div className="min-w-0 flex-1">
             {isRenaming ? (
               <input
@@ -218,7 +220,7 @@ export default function DeckCard({
             {menuOpen && (
               <div
                 role="menu"
-                className="absolute right-0 top-full z-20 mt-1 w-40 overflow-hidden rounded-lg border border-gray-200 bg-white py-1 shadow-xl"
+                className="absolute right-0 top-full z-20 mt-1 w-44 overflow-hidden rounded-xl border border-gray-100 bg-white py-1.5 shadow-2xl shadow-black/10"
               >
                 {isTrash ? (
                   <>

@@ -105,6 +105,12 @@ export async function POST(
   }
 
   const { afterPosition, layout } = parsed.data
+
+  // Validate afterPosition is within bounds
+  if (afterPosition > (deck.slideCount ?? 0)) {
+    return NextResponse.json({ error: 'afterPosition out of bounds' }, { status: 400 })
+  }
+
   const newPosition = afterPosition + 1
 
   // Shift existing slides at or after the new position
@@ -114,13 +120,13 @@ export async function POST(
     .where(eq(slides.deckId, id))
     .orderBy(asc(slides.position))
 
-  for (const slide of existingSlides) {
-    if (slide.position >= newPosition) {
-      await db
-        .update(slides)
-        .set({ position: slide.position + 1 })
-        .where(eq(slides.id, slide.id))
-    }
+  const toShift = existingSlides.filter((s) => s.position >= newPosition)
+  for (let i = toShift.length - 1; i >= 0; i--) {
+    const slide = toShift[i]!
+    await db
+      .update(slides)
+      .set({ position: slide.position + 1 })
+      .where(eq(slides.id, slide.id))
   }
 
   const newSlideId = createId()

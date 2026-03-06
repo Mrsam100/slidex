@@ -284,7 +284,7 @@ export function CursorSpotlight({
         className="pointer-events-none absolute inset-0 z-10 transition-opacity duration-300"
         style={{
           opacity: isHovered ? 1 : 0,
-          background: `radial-gradient(400px circle at ${pos.x}px ${pos.y}px, rgba(168,85,247,0.12), transparent 60%)`,
+          background: `radial-gradient(400px circle at ${pos.x}px ${pos.y}px, rgba(0,71,224,0.12), transparent 60%)`,
         }}
       />
       {children}

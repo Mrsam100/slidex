@@ -82,23 +82,28 @@ export default function EditableSlide({ slide, theme, onSave }: EditableSlidePro
     setImageUrl(slide.imageUrl ?? '')
   }, [slide])
 
+  // Use refs to always access latest state values (avoids stale closure on rapid cross-field edits)
+  const latestRef = useRef({ headline, body, bullets, leftColumn, rightColumn, quote, attribution, speakerNotes, imageUrl })
+  latestRef.current = { headline, body, bullets, leftColumn, rightColumn, quote, attribution, speakerNotes, imageUrl }
+
   // Collect current state and trigger save
   const triggerSave = useCallback(
     (overrides?: Partial<Slide>) => {
+      const cur = latestRef.current
       save({
-        headline,
-        body: body || undefined,
-        bullets: bullets.length > 0 ? bullets : undefined,
-        leftColumn: leftColumn.length > 0 ? leftColumn : undefined,
-        rightColumn: rightColumn.length > 0 ? rightColumn : undefined,
-        quote: quote || undefined,
-        attribution: attribution || undefined,
-        speakerNotes: speakerNotes || undefined,
-        imageUrl: imageUrl || undefined,
+        headline: cur.headline,
+        body: cur.body || undefined,
+        bullets: cur.bullets.length > 0 ? cur.bullets : undefined,
+        leftColumn: cur.leftColumn.length > 0 ? cur.leftColumn : undefined,
+        rightColumn: cur.rightColumn.length > 0 ? cur.rightColumn : undefined,
+        quote: cur.quote || undefined,
+        attribution: cur.attribution || undefined,
+        speakerNotes: cur.speakerNotes || undefined,
+        imageUrl: cur.imageUrl || undefined,
         ...overrides,
       })
     },
-    [save, headline, body, bullets, leftColumn, rightColumn, quote, attribution, speakerNotes, imageUrl],
+    [save],
   )
 
   function updateHeadline(val: string) {
@@ -127,6 +132,7 @@ export default function EditableSlide({ slide, theme, onSave }: EditableSlidePro
   function addBullet() {
     const next = [...bullets, '']
     setBullets(next)
+    triggerSave({ bullets: next })
   }
 
   function updateColumn(side: 'left' | 'right', index: number, val: string) {
@@ -157,14 +163,18 @@ export default function EditableSlide({ slide, theme, onSave }: EditableSlidePro
 
   function addColumnItem(side: 'left' | 'right') {
     if (side === 'left') {
-      setLeftColumn([...leftColumn, ''])
+      const next = [...leftColumn, '']
+      setLeftColumn(next)
+      triggerSave({ leftColumn: next })
     } else {
-      setRightColumn([...rightColumn, ''])
+      const next = [...rightColumn, '']
+      setRightColumn(next)
+      triggerSave({ rightColumn: next })
     }
   }
 
   const inputClass =
-    'w-full bg-transparent outline-none placeholder:opacity-40 focus:ring-1 focus:ring-blue-400/30 rounded px-1 -mx-1'
+    'w-full bg-transparent outline-none placeholder:opacity-30 focus:ring-2 focus:ring-blue-400/20 rounded-md px-1.5 -mx-1.5 transition-shadow'
 
   return (
     <div
@@ -177,16 +187,20 @@ export default function EditableSlide({ slide, theme, onSave }: EditableSlidePro
       }}
     >
       {/* Save indicator */}
-      <span className="absolute right-4 top-3 z-10 text-xs opacity-60">
+      <span className={`absolute right-4 top-3 z-10 text-[11px] font-medium transition-opacity ${saveStatus === 'idle' ? 'opacity-0' : 'opacity-50'}`}>
         {saveStatus === 'pending' && 'Saving...'}
         {saveStatus === 'saved' && 'Saved'}
       </span>
 
       {/* ─── Title layout ─── */}
       {slide.layout === 'title' && (
-        <div className="flex h-full flex-col items-center justify-center p-16 text-center">
+        <div className="flex h-full flex-col items-center justify-center px-24 py-16 text-center">
+          <div
+            className="mb-8 h-1 w-16 rounded-full"
+            style={{ backgroundColor: theme.accentColor }}
+          />
           <input
-            className={`${inputClass} text-center text-5xl font-bold leading-tight`}
+            className={`${inputClass} text-center text-[3.5rem] font-bold leading-[1.15] tracking-tight`}
             style={{ color: theme.headlineColor }}
             value={headline}
             onChange={(e) => updateHeadline(e.target.value)}
@@ -194,40 +208,41 @@ export default function EditableSlide({ slide, theme, onSave }: EditableSlidePro
             maxLength={200}
           />
           <textarea
-            className={`${inputClass} mt-6 max-w-2xl resize-none text-center text-xl leading-relaxed opacity-80`}
+            className={`${inputClass} mt-8 max-w-2xl resize-none text-center text-xl leading-relaxed opacity-65`}
             value={body}
             onChange={(e) => updateBody(e.target.value)}
             placeholder="Body text (optional)"
             rows={2}
             maxLength={2000}
           />
-          <div
-            className="mt-8 h-1 w-24"
-            style={{ backgroundColor: theme.accentColor }}
-          />
         </div>
       )}
 
       {/* ─── Bullets layout ─── */}
       {slide.layout === 'bullets' && (
-        <div className="flex h-full flex-col p-16">
+        <div className="flex h-full flex-col p-16 pr-20">
+          {/* Accent sidebar stripe */}
+          <div
+            className="absolute bottom-16 left-16 top-16 w-1 rounded-full"
+            style={{ backgroundColor: theme.accentColor, opacity: 0.2 }}
+          />
           <input
-            className={`${inputClass} text-5xl font-bold`}
+            className={`${inputClass} pl-6 text-[2.75rem] font-bold leading-[1.2] tracking-tight`}
             style={{ color: theme.headlineColor }}
             value={headline}
             onChange={(e) => updateHeadline(e.target.value)}
             placeholder="Headline"
             maxLength={200}
           />
-          <ul className="mt-8 flex-1 space-y-4">
+          <ul className="mt-10 flex-1 space-y-6 pl-6">
             {bullets.map((bullet, i) => (
-              <li key={i} className="group flex items-start gap-4">
+              <li key={i} className="group flex items-start gap-5">
                 <span
-                  className="mt-2.5 h-3 w-3 shrink-0"
+                  className="mt-2 h-3 w-3 shrink-0 rounded-sm"
                   style={{ backgroundColor: theme.accentColor }}
                 />
                 <input
-                  className={`${inputClass} flex-1 text-lg`}
+                  className={`${inputClass} flex-1 text-xl leading-relaxed`}
                   value={bullet}
                   onChange={(e) => updateBullet(i, e.target.value)}
                   placeholder="Bullet point"
@@ -235,7 +250,7 @@ export default function EditableSlide({ slide, theme, onSave }: EditableSlidePro
                 />
                 <button
                   onClick={() => removeBullet(i)}
-                  className="mt-1 shrink-0 rounded p-1 opacity-0 transition-opacity hover:bg-black/10 group-hover:opacity-60"
+                  className="mt-1 shrink-0 rounded-md p-1 opacity-0 transition-opacity hover:bg-black/10 group-hover:opacity-60"
                   aria-label="Remove bullet"
                 >
                   <X className="h-4 w-4" />
@@ -246,7 +261,7 @@ export default function EditableSlide({ slide, theme, onSave }: EditableSlidePro
           {bullets.length < 10 && (
             <button
               onClick={addBullet}
-              className="mt-2 flex items-center gap-1 self-start rounded px-2 py-1 text-sm opacity-50 transition-opacity hover:opacity-80"
+              className="mt-3 flex items-center gap-1.5 self-start rounded-md px-3 py-1.5 pl-6 text-sm opacity-40 transition-opacity hover:opacity-70"
             >
               <Plus className="h-3.5 w-3.5" /> Add bullet
             </button>
@@ -256,29 +271,34 @@ export default function EditableSlide({ slide, theme, onSave }: EditableSlidePro
 
       {/* ─── Two-column layout ─── */}
       {slide.layout === 'two-column' && (
-        <div className="flex h-full flex-col p-12">
+        <div className="flex h-full flex-col p-16">
           <input
-            className={`${inputClass} text-5xl font-bold`}
+            className={`${inputClass} text-[2.75rem] font-bold leading-[1.2] tracking-tight`}
             style={{ color: theme.headlineColor }}
             value={headline}
             onChange={(e) => updateHeadline(e.target.value)}
             placeholder="Headline"
             maxLength={200}
           />
-          <div className="mt-8 grid flex-1 grid-cols-2 gap-12">
+          <div className="relative mt-10 grid flex-1 grid-cols-2 gap-16">
+            {/* Column divider */}
+            <div
+              className="absolute left-1/2 top-0 h-[80%] w-px -translate-x-1/2"
+              style={{ backgroundColor: theme.accentColor, opacity: 0.15 }}
+            />
             {(['left', 'right'] as const).map((side) => {
               const items = side === 'left' ? leftColumn : rightColumn
               return (
                 <div key={side}>
-                  <ul className="space-y-3">
+                  <ul className="space-y-5">
                     {items.map((item, i) => (
-                      <li key={i} className="group flex items-start gap-3">
+                      <li key={i} className="group flex items-start gap-4">
                         <span
-                          className="mt-2.5 h-3 w-3 shrink-0"
+                          className="mt-2 h-3 w-3 shrink-0 rounded-sm"
                           style={{ backgroundColor: theme.accentColor }}
                         />
                         <input
-                          className={`${inputClass} flex-1 text-lg`}
+                          className={`${inputClass} flex-1 text-lg leading-relaxed`}
                           value={item}
                           onChange={(e) => updateColumn(side, i, e.target.value)}
                           placeholder="Column item"
@@ -286,7 +306,7 @@ export default function EditableSlide({ slide, theme, onSave }: EditableSlidePro
                         />
                         <button
                           onClick={() => removeColumnItem(side, i)}
-                          className="mt-1 shrink-0 rounded p-1 opacity-0 transition-opacity hover:bg-black/10 group-hover:opacity-60"
+                          className="mt-1 shrink-0 rounded-md p-1 opacity-0 transition-opacity hover:bg-black/10 group-hover:opacity-60"
                           aria-label="Remove item"
                         >
                           <X className="h-4 w-4" />
@@ -297,7 +317,7 @@ export default function EditableSlide({ slide, theme, onSave }: EditableSlidePro
                   {items.length < 10 && (
                     <button
                       onClick={() => addColumnItem(side)}
-                      className="mt-2 flex items-center gap-1 rounded px-2 py-1 text-sm opacity-50 transition-opacity hover:opacity-80"
+                      className="mt-3 flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm opacity-40 transition-opacity hover:opacity-70"
                     >
                       <Plus className="h-3.5 w-3.5" /> Add item
                     </button>
@@ -311,15 +331,15 @@ export default function EditableSlide({ slide, theme, onSave }: EditableSlidePro
 
       {/* ─── Quote layout ─── */}
       {slide.layout === 'quote' && (
-        <div className="flex h-full flex-col items-center justify-center p-16 text-center">
+        <div className="flex h-full flex-col items-center justify-center p-20 text-center">
           <div
-            className="font-serif text-7xl leading-none opacity-20"
-            style={{ color: theme.accentColor }}
+            className="font-serif text-[120px] leading-none"
+            style={{ color: theme.accentColor, opacity: 0.15 }}
           >
             &ldquo;
           </div>
           <textarea
-            className={`${inputClass} mt-2 max-w-3xl resize-none text-center text-3xl font-medium italic leading-relaxed`}
+            className={`${inputClass} -mt-8 max-w-3xl resize-none text-center text-[1.75rem] font-medium italic leading-relaxed`}
             style={{ color: theme.headlineColor }}
             value={quote}
             onChange={(e) => {
@@ -330,25 +350,35 @@ export default function EditableSlide({ slide, theme, onSave }: EditableSlidePro
             rows={3}
             maxLength={1000}
           />
-          <input
-            className={`${inputClass} mt-6 text-center text-base opacity-60`}
-            value={attribution}
-            onChange={(e) => {
-              setAttribution(e.target.value)
-              triggerSave({ attribution: e.target.value || undefined })
-            }}
-            placeholder="— Attribution"
-            maxLength={200}
-          />
+          <div className="mt-10 flex items-center gap-3">
+            <div
+              className="h-px w-8"
+              style={{ backgroundColor: theme.accentColor, opacity: 0.4 }}
+            />
+            <input
+              className={`${inputClass} text-center text-sm font-medium uppercase tracking-wide opacity-60`}
+              value={attribution}
+              onChange={(e) => {
+                setAttribution(e.target.value)
+                triggerSave({ attribution: e.target.value || undefined })
+              }}
+              placeholder="Attribution"
+              maxLength={200}
+            />
+            <div
+              className="h-px w-8"
+              style={{ backgroundColor: theme.accentColor, opacity: 0.4 }}
+            />
+          </div>
         </div>
       )}
 
       {/* ─── Image-text layout ─── */}
       {slide.layout === 'image-text' && (
         <div className="flex h-full">
-          <div className="flex w-[55%] flex-col justify-center p-16">
+          <div className="flex w-[55%] flex-col justify-center p-16 pr-12">
             <input
-              className={`${inputClass} text-5xl font-bold`}
+              className={`${inputClass} text-[2.75rem] font-bold leading-[1.2] tracking-tight`}
               style={{ color: theme.headlineColor }}
               value={headline}
               onChange={(e) => updateHeadline(e.target.value)}
@@ -356,7 +386,7 @@ export default function EditableSlide({ slide, theme, onSave }: EditableSlidePro
               maxLength={200}
             />
             <textarea
-              className={`${inputClass} mt-4 resize-none text-xl leading-relaxed opacity-80`}
+              className={`${inputClass} mt-6 resize-none text-xl leading-relaxed opacity-70`}
               value={body}
               onChange={(e) => updateBody(e.target.value)}
               placeholder="Body text (optional)"
@@ -485,9 +515,9 @@ export default function EditableSlide({ slide, theme, onSave }: EditableSlidePro
       )}
 
       {/* Speaker notes (shared, bottom edge) */}
-      <div className="absolute bottom-0 left-0 right-0 border-t px-6 py-3" style={{ borderColor: `${theme.textColor}20` }}>
+      <div className="absolute bottom-0 left-0 right-16 border-t px-6 py-2.5" style={{ borderColor: `${theme.textColor}15` }}>
         <textarea
-          className={`${inputClass} resize-none text-xs opacity-50`}
+          className={`${inputClass} resize-none text-[11px] opacity-40`}
           value={speakerNotes}
           onChange={(e) => {
             setSpeakerNotes(e.target.value)
@@ -500,7 +530,7 @@ export default function EditableSlide({ slide, theme, onSave }: EditableSlidePro
       </div>
 
       {/* Slide number */}
-      <span className="absolute bottom-4 right-6 text-xs opacity-40">
+      <span className="absolute bottom-3 right-6 text-[11px] font-medium opacity-30">
         {slide.position}
       </span>
     </div>

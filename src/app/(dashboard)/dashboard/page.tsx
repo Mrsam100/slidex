@@ -70,7 +70,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
         speakerNotes: row.speakerNotes ?? undefined,
         imagePrompt: row.imagePrompt ?? undefined,
         imageUrl: row.imageUrl ?? undefined,
-        createdAt: row.createdAt,
+        createdAt: row.createdAt.toISOString() as unknown as Date,
       })
     }
   }

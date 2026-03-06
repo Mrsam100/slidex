@@ -258,17 +258,18 @@ export default function DashboardClient({
     setDecks(initialDecks)
   }, [initialDecks])
 
-  // Ctrl+K / Cmd+K shortcut
+  // Ctrl+K / Cmd+K shortcut (toggle)
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault()
-        openSearch()
+        if (searchOpen) closeSearch()
+        else openSearch()
       }
     }
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
-  }, [openSearch])
+  }, [openSearch, closeSearch, searchOpen])
 
   function getTheme(themeId: string): Theme {
     return THEMES.find((t) => t.id === themeId) ?? DEFAULT_THEME
@@ -468,14 +469,21 @@ export default function DashboardClient({
       )}
 
       {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-dark">
-          {isTrash ? 'Trash' : 'My Decks'}
-        </h1>
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-dark">
+            {isTrash ? 'Trash' : 'My Decks'}
+          </h1>
+          {!isTrash && (
+            <p className="mt-1 text-sm text-grey">
+              {decks.length} {decks.length === 1 ? 'presentation' : 'presentations'}
+            </p>
+          )}
+        </div>
         {!isTrash && (
           <Link
             href="/generate"
-            className="flex items-center gap-2 rounded-lg bg-brand-blue px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-brand-blue/90 hover:shadow-md"
+            className="flex items-center gap-2 rounded-xl bg-brand-blue px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-brand-blue/20 transition-all duration-200 hover:-translate-y-0.5 hover:bg-brand-blue/90 hover:shadow-lg hover:shadow-brand-blue/25"
           >
             <Sparkles className="h-4 w-4" />
             Create new
@@ -540,17 +548,17 @@ export default function DashboardClient({
 
       {/* Content */}
       {filteredDecks.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center md:py-32">
-          <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-brand-blue/5">
+        <div className="flex flex-col items-center justify-center py-20 text-center md:py-36">
+          <div className="mb-7 flex h-24 w-24 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-blue/5 to-brand-blue/10">
             {isTrash ? (
-              <Trash2 className="h-10 w-10 text-grey" />
+              <Trash2 className="h-10 w-10 text-grey/50" />
             ) : activeTab === 'favorites' ? (
-              <Star className="h-10 w-10 text-grey" />
+              <Star className="h-10 w-10 text-grey/50" />
             ) : (
-              <Presentation className="h-10 w-10 text-brand-blue" />
+              <Presentation className="h-10 w-10 text-brand-blue/70" />
             )}
           </div>
-          <h2 className="text-xl font-bold text-dark">
+          <h2 className="text-xl font-bold tracking-tight text-dark">
             {isTrash
               ? 'Trash is empty'
               : activeTab === 'favorites'
@@ -559,7 +567,7 @@ export default function DashboardClient({
                   ? 'Nothing recent'
                   : 'Create your first deck'}
           </h2>
-          <p className="mt-2 max-w-xs text-sm text-grey">
+          <p className="mt-2.5 max-w-sm text-sm leading-relaxed text-grey">
             {isTrash
               ? 'Deleted decks will appear here.'
               : activeTab === 'favorites'
@@ -571,7 +579,7 @@ export default function DashboardClient({
           {!isTrash && activeTab === 'all' && (
             <Link
               href="/generate"
-              className="mt-6 flex items-center gap-2 rounded-lg bg-brand-blue px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-blue/90"
+              className="mt-8 flex items-center gap-2 rounded-xl bg-brand-blue px-6 py-3 text-sm font-semibold text-white shadow-md shadow-brand-blue/20 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
             >
               <Plus className="h-4 w-4" />
               New Deck
@@ -579,7 +587,7 @@ export default function DashboardClient({
           )}
         </div>
       ) : viewMode === 'grid' || isTrash ? (
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filteredDecks.map((deck) => (
             <DeckCard key={deck.id} {...deckItemProps(deck)} />
           ))}

@@ -25,17 +25,21 @@ export function Footer() {
         </div>
 
         <div className="flex gap-6">
-          {['Privacy', 'Terms', 'Contact'].map((item) => (
+          {[
+            { label: 'Privacy', href: '/privacy' },
+            { label: 'Terms', href: '/terms' },
+            { label: 'Contact', href: 'mailto:hello@slidex.ai' },
+          ].map((item) => (
             <motion.div
-              key={item}
+              key={item.label}
               whileHover={{ y: -2 }}
               transition={{ type: 'spring', stiffness: 300 }}
             >
               <Link
-                href="#"
+                href={item.href}
                 className="text-sm text-gray-400 transition-colors hover:text-white"
               >
-                {item}
+                {item.label}
               </Link>
             </motion.div>
           ))}

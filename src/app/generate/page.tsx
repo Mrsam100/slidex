@@ -180,7 +180,16 @@ export default function GeneratePage() {
         }),
       })
       if (!res.ok) {
-        toast.error('Something went wrong. Please try again.')
+        if (res.status === 401) {
+          router.push('/signin')
+          return
+        }
+        if (res.status === 429) {
+          toast.error('Too many concurrent generations. Please wait and try again.')
+          return
+        }
+        const data = await res.json().catch(() => ({}))
+        toast.error(data.error || 'Something went wrong. Please try again.')
         return
       }
       const data = await res.json()
@@ -197,25 +206,46 @@ export default function GeneratePage() {
   }
 
   /* ─── API: Generate slides → redirect to editor ─── */
+  const [isGeneratingSlides, setIsGeneratingSlides] = useState(false)
+
   async function handleGenerateSlides() {
-    if (!state.deckId) return
+    if (!state.deckId || isGeneratingSlides) return
+    setIsGeneratingSlides(true)
     const currentDeckId = state.deckId
 
-    // Fire-and-forget: start generation in background
-    fetch('/api/generate/slides', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        deckId: currentDeckId,
-        outline: state.outline,
-        topic: state.topic,
-        tone: state.tone,
-        audience: state.audience,
-        theme: state.theme,
-      }),
-    }).catch(() => {})
+    try {
+      const res = await fetch('/api/generate/slides', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          deckId: currentDeckId,
+          outline: state.outline,
+          topic: state.topic,
+          tone: state.tone,
+          audience: state.audience,
+          theme: state.theme,
+        }),
+      })
 
-    // Redirect immediately to the editor — it will handle polling
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        if (res.status === 401) {
+          router.push('/signin')
+          return
+        }
+        if (res.status === 429) {
+          toast.error('Too many concurrent generations. Please wait and try again.')
+          setIsGeneratingSlides(false)
+          return
+        }
+        toast.error(data.error || 'Failed to start generation. Please try again.')
+        setIsGeneratingSlides(false)
+        return
+      }
+    } catch {
+      // Network error — still redirect, editor will show error state via polling
+    }
+
     router.push(`/deck/${currentDeckId}`)
   }
 
@@ -250,18 +280,18 @@ export default function GeneratePage() {
 
   /* ─── Main: Prompt + Outline (single scrollable page like Gamma) ─── */
   return (
-    <div className="min-h-screen bg-light-bg pb-24">
+    <div className="min-h-screen bg-[#f8f9fc] pb-28">
       {/* ── Top Bar ── */}
-      <header className="sticky top-0 z-30 border-b border-gray-100 bg-white/95 backdrop-blur-sm">
+      <header className="sticky top-0 z-30 border-b border-gray-200/60 bg-white/95 shadow-[0_1px_3px_rgba(0,0,0,0.04)] backdrop-blur-sm">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3 sm:px-6">
           <Link
             href="/dashboard"
-            className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-mid transition-colors hover:bg-gray-50"
+            className="flex items-center gap-2 rounded-xl border border-gray-200 px-3.5 py-2 text-sm font-medium text-mid transition-all hover:bg-gray-50 hover:shadow-sm"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             Back
           </Link>
-          <h1 className="text-base font-bold text-brand-blue">Generate</h1>
+          <h1 className="text-base font-bold tracking-tight text-brand-blue">Generate</h1>
           <div className="w-20" />
         </div>
       </header>
@@ -291,7 +321,7 @@ export default function GeneratePage() {
         </div>
 
         {/* ── Prompt Input ── */}
-        <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
+        <div className="flex items-center gap-3 rounded-2xl border border-gray-200/80 bg-white px-5 py-3.5 shadow-sm ring-1 ring-black/[0.03] transition-shadow focus-within:border-brand-blue/30 focus-within:shadow-md focus-within:ring-brand-blue/10">
           <input
             ref={inputRef}
             type="text"
@@ -303,7 +333,7 @@ export default function GeneratePage() {
               }
             }}
             placeholder="Describe your presentation topic..."
-            className="min-w-0 flex-1 bg-transparent text-[15px] text-dark outline-none placeholder:text-grey/50"
+            className="min-w-0 flex-1 bg-transparent text-[15px] text-dark outline-none placeholder:text-grey/40"
           />
           <button
             onClick={handleGenerateOutline}
@@ -337,14 +367,14 @@ export default function GeneratePage() {
           <div className="mt-6 animate-in fade-in duration-300">
             <h3 className="mb-3 text-sm font-semibold text-dark">Outline</h3>
 
-            <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <div className="overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-sm ring-1 ring-black/[0.03]">
               <div className="divide-y divide-gray-100">
                 {state.outline.map((item) => (
                   <div
                     key={item.position}
-                    className="group flex items-start gap-3 px-4 py-4 transition-colors hover:bg-gray-50/50"
+                    className="group flex items-start gap-3 px-5 py-4 transition-colors hover:bg-gray-50/50"
                   >
-                    <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand-blue/8 text-xs font-bold text-brand-blue">
+                    <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand-blue/8 text-xs font-bold tabular-nums text-brand-blue">
                       {item.position}
                     </span>
                     <div className="min-w-0 flex-1">
@@ -392,7 +422,7 @@ export default function GeneratePage() {
               </h3>
 
               {/* Text content section */}
-              <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+              <div className="rounded-2xl border border-gray-200/80 bg-white p-5 shadow-sm ring-1 ring-black/[0.03]">
                 <div className="mb-4 flex items-center gap-2">
                   <AlignLeft className="h-4 w-4 text-brand-blue" />
                   <h4 className="text-sm font-semibold text-dark">
@@ -409,7 +439,7 @@ export default function GeneratePage() {
               </div>
 
               {/* Visuals / Theme section */}
-              <div className="mt-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+              <div className="mt-4 rounded-2xl border border-gray-200/80 bg-white p-5 shadow-sm ring-1 ring-black/[0.03]">
                 <div className="mb-4 flex items-center gap-2">
                   <Image className="h-4 w-4 text-brand-blue" />
                   <h4 className="text-sm font-semibold text-dark">Visuals</h4>
@@ -427,17 +457,27 @@ export default function GeneratePage() {
 
       {/* ── Sticky Bottom Bar (like Gamma) ── */}
       {hasOutline && (
-        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-gray-200 bg-white/95 backdrop-blur-sm">
-          <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3 sm:px-6">
-            <p className="text-sm text-grey">
-              {state.outline.length} cards total
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-gray-200/60 bg-white/95 shadow-[0_-2px_10px_rgba(0,0,0,0.04)] backdrop-blur-sm">
+          <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3.5 sm:px-6">
+            <p className="text-sm font-medium tabular-nums text-grey">
+              {state.outline.length} cards
             </p>
             <button
               onClick={handleGenerateSlides}
-              className="flex items-center gap-2.5 rounded-xl bg-brand-blue px-8 py-3 text-sm font-semibold text-white shadow-md shadow-brand-blue/20 transition-all hover:bg-brand-blue/90 hover:shadow-lg"
+              disabled={isGeneratingSlides}
+              className="flex items-center gap-2.5 rounded-xl bg-brand-blue px-8 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-blue/25 transition-all hover:-translate-y-px hover:bg-brand-blue/90 hover:shadow-xl disabled:translate-y-0 disabled:opacity-70 disabled:shadow-none"
             >
-              <Sparkles className="h-4 w-4" />
-              Generate
+              {isGeneratingSlides ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Starting...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4" />
+                  Generate
+                </>
+              )}
             </button>
           </div>
         </div>

@@ -1,5 +1,6 @@
 export type SlideLayout = 'title' | 'bullets' | 'two-column' | 'quote' | 'image-text'
 export type DeckStatus = 'draft' | 'generating' | 'done' | 'error'
+export type SubscriptionStatus = 'free' | 'pro' | 'cancelled'
 
 export interface Slide {
   id: string

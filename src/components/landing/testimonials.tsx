@@ -8,7 +8,7 @@ const testimonials = [
     name: 'Elena Rossi',
     role: 'Professor, MIT',
     initial: 'E',
-    color: 'bg-purple-500/60',
+    color: 'bg-brand-blue/60',
     stars: 5,
     quote:
       'SlideX has completely changed how I prepare lectures. My slides are cleaner, more structured, and my students love them.',
@@ -44,7 +44,7 @@ const testimonials = [
     name: 'Priya Patel',
     role: 'Business Consultant',
     initial: 'P',
-    color: 'bg-fuchsia-500/60',
+    color: 'bg-brand-teal/60',
     stars: 5,
     quote:
       'The export and share features are seamless. I generate a deck, share the link with clients, and they always ask how I made it so fast.',
@@ -62,7 +62,7 @@ const testimonials = [
 
 function TestimonialCard({ t }: { t: (typeof testimonials)[number] }) {
   return (
-    <div className="w-80 shrink-0 rounded-2xl border border-white/10 bg-[#111] p-6 transition-colors hover:border-purple-500/30">
+    <div className="w-80 shrink-0 rounded-2xl border border-white/10 bg-[#111] p-6 transition-colors hover:border-brand-blue/30">
       {/* Avatar + name */}
       <div className="flex items-center gap-3">
         <div
@@ -81,7 +81,7 @@ function TestimonialCard({ t }: { t: (typeof testimonials)[number] }) {
         {Array.from({ length: t.stars }).map((_, i) => (
           <Star
             key={i}
-            className="h-4 w-4 fill-purple-400 text-purple-400"
+            className="h-4 w-4 fill-yellow-400 text-yellow-400"
           />
         ))}
       </div>
@@ -103,7 +103,7 @@ export function Testimonials() {
       <div className="mx-auto max-w-7xl px-6">
         {/* Header */}
         <FadeUp className="mb-16 text-center">
-          <h2 className="text-4xl font-bold italic text-white md:text-5xl">
+          <h2 className="text-4xl font-bold text-white md:text-5xl">
             What People Say About SlideX
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-gray-400">

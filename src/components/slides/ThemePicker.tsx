@@ -38,26 +38,29 @@ function ThemeCard({
       aria-label={`${theme.name} theme`}
       onClick={onSelect}
       className={cn(
-        'group relative flex flex-col items-center gap-2 rounded-xl p-2 transition-all',
+        'group relative flex flex-col items-center gap-2.5 rounded-xl p-2.5 transition-all',
         isSelected
-          ? 'ring-2 ring-brand-blue ring-offset-2'
+          ? 'bg-brand-blue/5 ring-2 ring-brand-blue ring-offset-2'
           : 'hover:bg-gray-50',
       )}
     >
       {/* Mini preview — 1280×720 scaled to 160×90 via scale(0.125) */}
-      <div className="relative aspect-video w-40 overflow-hidden rounded-lg border border-gray-200">
+      <div className={cn(
+        'relative aspect-video w-40 overflow-hidden rounded-lg border-2 transition-all',
+        isSelected ? 'border-brand-blue shadow-md shadow-brand-blue/15' : 'border-gray-200',
+      )}>
         <div className="absolute left-0 top-0 origin-top-left" style={{ transform: 'scale(0.125)', width: 1280, height: 720 }}>
           <SlideCanvas slide={PREVIEW_SLIDE} theme={theme} />
         </div>
         {/* Selected overlay */}
         {isSelected && (
           <div className="absolute inset-0 flex items-center justify-center bg-brand-blue/10">
-            <CheckCircle className="h-6 w-6 text-brand-blue" />
+            <CheckCircle className="h-6 w-6 text-brand-blue drop-shadow-sm" />
           </div>
         )}
       </div>
       <span className={cn(
-        'text-xs font-medium',
+        'text-xs font-semibold',
         isSelected ? 'text-brand-blue' : 'text-mid',
       )}>
         {theme.name}

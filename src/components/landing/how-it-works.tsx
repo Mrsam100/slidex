@@ -50,7 +50,7 @@ const steps: Step[] = [
               key={item}
               className="flex items-center gap-2 rounded-lg bg-white/5 px-3 py-2"
             >
-              <span className="text-xs font-bold text-purple-400">
+              <span className="text-xs font-bold text-brand-blue">
                 {i + 1}
               </span>
               <span className="text-sm text-gray-300">{item}</span>
@@ -111,7 +111,7 @@ export function HowItWorks() {
             <FadeScale key={s.step} delay={i * 0.15}>
               <MagneticCard>
                 <CursorSpotlight>
-                  <div className="rounded-xl border border-white/10 bg-[#111] p-8 transition-colors hover:border-purple-500/30">
+                  <div className="rounded-xl border border-white/10 bg-[#111] p-8 transition-colors hover:border-brand-blue/30">
                     <motion.span
                       initial={{ scale: 0 }}
                       whileInView={{ scale: 1 }}
@@ -121,7 +121,7 @@ export function HowItWorks() {
                         type: 'spring',
                         stiffness: 300,
                       }}
-                      className="inline-flex items-center rounded bg-purple-500/10 px-2.5 py-1 text-xs font-bold text-purple-400"
+                      className="inline-flex items-center rounded bg-brand-blue/10 px-2.5 py-1 text-xs font-bold text-brand-blue"
                     >
                       Step {s.step}
                     </motion.span>

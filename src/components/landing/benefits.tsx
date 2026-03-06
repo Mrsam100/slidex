@@ -74,13 +74,13 @@ export function Benefits() {
             <StaggerItem key={b.title}>
               <MagneticCard>
                 <CursorSpotlight>
-                  <div className="rounded-xl border border-white/10 bg-[#111] p-6 transition-colors hover:border-purple-500/30">
+                  <div className="rounded-xl border border-white/10 bg-[#111] p-6 transition-colors hover:border-brand-blue/30">
                     <motion.div
                       whileHover={{ scale: 1.2, rotate: 10 }}
                       transition={{ type: 'spring', stiffness: 400, damping: 15 }}
-                      className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/10"
+                      className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-brand-blue/10"
                     >
-                      <b.icon className="h-5 w-5 text-purple-400" />
+                      <b.icon className="h-5 w-5 text-brand-blue" />
                     </motion.div>
                     <h3 className="text-lg font-semibold text-white">
                       {b.title}

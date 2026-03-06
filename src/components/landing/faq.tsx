@@ -71,7 +71,7 @@ export function FAQ() {
                   className={cn(
                     'rounded-xl border bg-[#111] transition-colors',
                     openIndex === i
-                      ? 'border-purple-500/40'
+                      ? 'border-brand-blue/40'
                       : 'border-white/10 hover:border-white/20',
                   )}
                 >

@@ -94,6 +94,7 @@ export default async function SharedDeckPage({ params }: Props) {
     rightColumn: row.rightColumn ?? undefined,
     quote: row.quote ?? undefined,
     attribution: row.attribution ?? undefined,
+    imageUrl: row.imageUrl ?? undefined,
     createdAt: row.createdAt,
   }))
 

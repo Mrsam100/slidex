@@ -18,9 +18,28 @@
   --color-foreground: #0A0A0A;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   background: var(--color-background);
   color: var(--color-foreground);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Smooth focus rings globally */
+*:focus-visible {
+  outline: 2px solid var(--color-brand-blue);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Selection highlight */
+::selection {
+  background: rgba(0, 71, 224, 0.15);
+  color: inherit;
 }
 
 /* Infinite marquee animation for testimonials */
@@ -48,4 +67,13 @@ body {
 
 .logo-marquee:hover {
   animation-play-state: paused;
+}
+
+/* Hide scrollbar utility */
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
 }

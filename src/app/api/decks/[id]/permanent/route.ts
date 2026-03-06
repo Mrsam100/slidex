@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { z } from 'zod'
 import { and, eq, isNotNull } from 'drizzle-orm'
 
 import { auth } from '@/auth'
@@ -6,6 +7,10 @@ import { db } from '@/db'
 import { decks } from '@/db/schema'
 
 export const dynamic = 'force-dynamic'
+
+const deleteSchema = z.object({
+  confirm: z.literal(true),
+})
 
 /**
  * DELETE /api/decks/[id]/permanent — permanently delete a trashed deck.
@@ -22,7 +27,6 @@ export async function DELETE(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Require explicit confirmation in request body
   let body: unknown
   try {
     body = await req.json()
@@ -30,7 +34,8 @@ export async function DELETE(
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
-  if (!body || typeof body !== 'object' || (body as Record<string, unknown>).confirm !== true) {
+  const parsed = deleteSchema.safeParse(body)
+  if (!parsed.success) {
     return NextResponse.json({ error: 'Confirmation required' }, { status: 400 })
   }
 

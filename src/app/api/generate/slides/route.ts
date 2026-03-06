@@ -7,7 +7,8 @@ import { and, eq, sql } from 'drizzle-orm'
 import { auth } from '@/auth'
 import { db } from '@/db'
 import { decks, slides } from '@/db/schema'
-import { SLIDE_SYSTEM, slideUserPrompt } from '@/lib/ai'
+import { GEMINI_MODEL, SLIDE_SYSTEM, slideUserPrompt } from '@/lib/ai'
+import { THEMES } from '@/lib/themes'
 import type { OutlineItem } from '@/types/deck'
 
 export const dynamic = 'force-dynamic'
@@ -28,8 +29,27 @@ const bodySchema = z.object({
   topic: z.string().min(3).max(500),
   tone: z.enum(['academic', 'professional', 'casual', 'creative']),
   audience: z.enum(['students', 'educators', 'business', 'general']),
-  theme: z.string().min(1).max(50),
+  theme: z.enum(THEMES.map((t) => t.id) as [string, ...string[]]),
 })
+
+/** Fetch a high-quality stock photo from Lorem Picsum (free, no API key).
+ *  Uses the query string as a deterministic seed so the same query → same image. */
+async function fetchStockImage(query: string, position: number): Promise<string | null> {
+  try {
+    // Create a seed from the query + position for deterministic but varied images
+    const seed = `${query}-${position}`.replace(/[^a-zA-Z0-9]/g, '-')
+    // Lorem Picsum returns a redirect to the actual image CDN
+    const res = await fetch(`https://picsum.photos/seed/${seed}/1280/720`, {
+      redirect: 'follow',
+    })
+    if (res.ok && res.url) {
+      return res.url
+    }
+    return null
+  } catch {
+    return null
+  }
+}
 
 /** Try to parse JSON, stripping markdown fences if present */
 function parseJSON(text: string): unknown {
@@ -108,7 +128,7 @@ export async function POST(req: Request) {
     for (const item of outline) {
       // 5a. Generate slide content
       const result = await generateText({
-        model: google('gemini-2.0-flash'),
+        model: google(GEMINI_MODEL),
         system: SLIDE_SYSTEM,
         prompt: slideUserPrompt(item as OutlineItem, {
           topic,
@@ -117,7 +137,7 @@ export async function POST(req: Request) {
           audience,
           theme,
         }),
-        maxOutputTokens: 600,
+        maxOutputTokens: 1000,
       })
 
       // 5b. Parse JSON with retry
@@ -126,7 +146,7 @@ export async function POST(req: Request) {
         slideData = parseJSON(result.text) as Record<string, unknown>
       } catch {
         const retry = await generateText({
-          model: google('gemini-2.0-flash'),
+          model: google(GEMINI_MODEL),
           system: SLIDE_SYSTEM,
           prompt: `Return ONLY raw JSON. No markdown.\n\n${slideUserPrompt(item as OutlineItem, {
             topic,
@@ -135,12 +155,19 @@ export async function POST(req: Request) {
             audience,
             theme,
           })}`,
-          maxOutputTokens: 600,
+          maxOutputTokens: 1000,
         })
         slideData = parseJSON(retry.text) as Record<string, unknown>
       }
 
-      // 5c. Insert slide row
+      // 5c. Fetch image for image-text slides
+      let imageUrl: string | null = null
+      if (item.type === 'image-text') {
+        const query = (slideData.imageQuery as string) || item.title
+        imageUrl = await fetchStockImage(query, item.position)
+      }
+
+      // 5d. Insert slide row
       await db.insert(slides).values({
         deckId,
         position: item.position,
@@ -153,6 +180,8 @@ export async function POST(req: Request) {
         quote: (slideData.quote as string) || null,
         attribution: (slideData.attribution as string) || null,
         speakerNotes: (slideData.speakerNotes as string) || null,
+        imagePrompt: (slideData.imageQuery as string) || null,
+        imageUrl,
       })
 
       insertedCount++

@@ -7,10 +7,19 @@ import { google } from '@ai-sdk/google'
 import { auth } from '@/auth'
 import { db } from '@/db'
 import { decks, slides } from '@/db/schema'
-import { REWRITE_SYSTEM, rewriteUserPrompt } from '@/lib/ai'
+import { GEMINI_MODEL, REWRITE_SYSTEM, rewriteUserPrompt } from '@/lib/ai'
 import type { Slide } from '@/types/deck'
 
 export const dynamic = 'force-dynamic'
+
+/** Try to parse JSON, stripping markdown fences if present */
+function parseJSON(text: string): unknown {
+  let cleaned = text.trim()
+  if (cleaned.startsWith('```')) {
+    cleaned = cleaned.replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, '')
+  }
+  return JSON.parse(cleaned)
+}
 export const maxDuration = 60
 
 const rewriteSchema = z.object({
@@ -129,22 +138,22 @@ async function handleRewrite(
   try {
     const slideForPrompt = slideContent as Slide
     const result = await generateText({
-      model: google('gemini-2.0-flash'),
+      model: google(GEMINI_MODEL),
       system: REWRITE_SYSTEM,
       prompt: rewriteUserPrompt(slideForPrompt, parsed.data.instruction),
       maxOutputTokens: 800,
     })
 
     try {
-      rewritten = JSON.parse(result.text) as Record<string, unknown>
+      rewritten = parseJSON(result.text) as Record<string, unknown>
     } catch {
       const retry = await generateText({
-        model: google('gemini-2.0-flash'),
+        model: google(GEMINI_MODEL),
         system: REWRITE_SYSTEM,
         prompt: `Return ONLY raw JSON. No markdown.\n${rewriteUserPrompt(slideForPrompt, parsed.data.instruction)}`,
         maxOutputTokens: 800,
       })
-      rewritten = JSON.parse(retry.text) as Record<string, unknown>
+      rewritten = parseJSON(retry.text) as Record<string, unknown>
     }
   } catch (error) {
     console.error('[rewrite] AI generation failed:', {

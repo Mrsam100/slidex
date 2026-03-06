@@ -16,17 +16,31 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: 'jwt' },
   pages: {
     signIn: '/signin',
+    error: '/signin',
   },
   callbacks: {
     jwt({ token, user }) {
-      if (user) {
+      if (user?.id) {
         token.id = user.id
       }
       return token
     },
     session({ session, token }) {
-      session.user.id = token.id as string
+      if (typeof token.id === 'string' && token.id.length > 0) {
+        session.user.id = token.id
+      }
       return session
+    },
+    authorized({ auth: session, request }) {
+      const { pathname } = request.nextUrl
+      const protectedRoutes = ['/dashboard', '/generate', '/deck', '/settings']
+      const isProtected = protectedRoutes.some((r) => pathname.startsWith(r))
+
+      if (isProtected && !session?.user) {
+        return false // NextAuth redirects to signIn page
+      }
+
+      return true
     },
   },
 })
