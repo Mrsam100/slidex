@@ -107,9 +107,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 
-  if (deck.status !== 'draft') {
+  if (deck.status !== 'draft' && deck.status !== 'error') {
     return NextResponse.json(
-      { error: 'Deck is not in draft status' },
+      { error: 'Deck is already generating or complete' },
       { status: 409 },
     )
   }

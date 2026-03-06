@@ -574,10 +574,13 @@ export default function DeckViewerClient({
             <div className="flex-1 overflow-y-auto scrollbar-none px-2.5 pb-2.5">
               <div className="flex flex-col gap-2">
                 {slides.map((slide, i) => (
-                  <button
+                  <div
                     key={slide.id}
+                    role="button"
+                    tabIndex={0}
                     onClick={() => scrollToSlide(slide.id)}
-                    className={`group relative rounded-lg border-2 transition-all ${
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); scrollToSlide(slide.id) } }}
+                    className={`group relative cursor-pointer rounded-lg border-2 transition-all ${
                       activeSlideId === slide.id
                         ? 'border-brand-blue shadow-sm shadow-brand-blue/10'
                         : 'border-gray-100 hover:border-gray-300'
@@ -593,7 +596,7 @@ export default function DeckViewerClient({
                     <div className="overflow-hidden rounded-[5px]">
                       <SlideThumb slide={slide} theme={activeTheme} />
                     </div>
-                  </button>
+                  </div>
                 ))}
 
                 {/* Skeleton slides during generation */}

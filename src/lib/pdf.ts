@@ -50,7 +50,7 @@ export async function exportDeckToPDF(
     // Create offscreen container (visible to renderer but hidden from user)
     const container = document.createElement('div')
     container.style.cssText =
-      'position:absolute;left:0;top:0;width:1280px;height:720px;overflow:hidden;z-index:-1;opacity:0;pointer-events:none;'
+      'position:fixed;left:-9999px;top:0;width:1280px;height:720px;overflow:hidden;pointer-events:none;'
     document.body.appendChild(container)
 
     const root = createRoot(container)
