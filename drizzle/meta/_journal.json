@@ -43,6 +43,13 @@
       "when": 1772786156296,
       "tag": "0005_opposite_wasp",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1772874632498,
+      "tag": "0006_talented_zuras",
+      "breakpoints": true
     }
   ]
 }

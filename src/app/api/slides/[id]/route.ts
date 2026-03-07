@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic'
 
 const patchSchema = z.object({
   swapWithPosition: z.number().int().min(1).optional(),
-  layout: z.enum(['title', 'bullets', 'two-column', 'quote', 'image-text']).optional(),
+  layout: z.enum(['title', 'bullets', 'two-column', 'quote', 'image-text', 'chart']).optional(),
   headline: z.string().max(200).optional(),
   body: z.string().max(2000).optional(),
   bullets: z.array(z.string().max(500)).max(10).optional(),
@@ -26,6 +26,18 @@ const patchSchema = z.object({
     ),
     z.literal(''),
   ]).optional(),
+  chartData: z.object({
+    type: z.enum(['bar', 'horizontal-bar', 'pie', 'donut', 'line', 'area']),
+    labels: z.array(z.string().max(100)).max(20),
+    datasets: z.array(z.object({
+      label: z.string().max(100),
+      values: z.array(z.number()).max(20),
+      color: z.string().max(20).optional(),
+    })).max(5),
+    showLegend: z.boolean().optional(),
+    showValues: z.boolean().optional(),
+    unit: z.string().max(10).optional(),
+  }).optional(),
 })
 
 /** PATCH /api/slides/[id] — update slide content */
@@ -105,6 +117,7 @@ export async function PATCH(
     ...(d.attribution !== undefined && { attribution: d.attribution }),
     ...(d.speakerNotes !== undefined && { speakerNotes: d.speakerNotes }),
     ...(d.imageUrl !== undefined && { imageUrl: d.imageUrl }),
+    ...(d.chartData !== undefined && { chartData: d.chartData }),
   }
 
   if (Object.keys(updates).length === 0) {

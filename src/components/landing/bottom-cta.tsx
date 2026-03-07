@@ -27,7 +27,7 @@ export function BottomCTA() {
           whileTap={{ scale: 0.97 }}
         >
           <Link
-            href="/generate"
+            href="/dashboard"
             className="inline-flex items-center gap-2 rounded-xl bg-brand-blue px-8 py-4 text-sm font-semibold text-white shadow-xl shadow-brand-blue/30 transition-all hover:bg-brand-blue/90 hover:shadow-2xl hover:shadow-brand-blue/40"
           >
             Get started free

@@ -1,4 +1,21 @@
-export type SlideLayout = 'title' | 'bullets' | 'two-column' | 'quote' | 'image-text'
+export type SlideLayout = 'title' | 'bullets' | 'two-column' | 'quote' | 'image-text' | 'chart'
+
+export type ChartType = 'bar' | 'horizontal-bar' | 'pie' | 'donut' | 'line' | 'area'
+
+export interface ChartDataset {
+  label: string
+  values: number[]
+  color?: string
+}
+
+export interface ChartData {
+  type: ChartType
+  labels: string[]
+  datasets: ChartDataset[]
+  showLegend?: boolean
+  showValues?: boolean
+  unit?: string
+}
 export type DeckStatus = 'draft' | 'generating' | 'done' | 'error'
 export type SubscriptionStatus = 'free' | 'pro' | 'cancelled'
 
@@ -17,6 +34,7 @@ export interface Slide {
   speakerNotes?: string
   imagePrompt?: string
   imageUrl?: string
+  chartData?: ChartData
   createdAt: Date
 }
 
@@ -41,6 +59,7 @@ export interface GenerationParams {
   tone: 'academic' | 'professional' | 'casual' | 'creative'
   audience: 'students' | 'educators' | 'business' | 'general'
   theme: string
+  language?: string
 }
 
 export interface OutlineItem {

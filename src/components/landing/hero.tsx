@@ -121,7 +121,7 @@ export function Hero() {
             transition={{ type: 'spring', stiffness: 400, damping: 15 }}
           >
             <Link
-              href="/generate"
+              href="/dashboard"
               className="inline-block rounded-lg bg-brand-blue px-8 py-4 text-sm font-semibold text-white transition-colors hover:bg-brand-blue/90"
             >
               Get started free &rarr;

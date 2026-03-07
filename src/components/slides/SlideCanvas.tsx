@@ -2,16 +2,54 @@
 
 import { memo } from 'react'
 import type { Slide, Theme } from '@/types/deck'
+import ChartRenderer from './ChartRenderer'
 
 interface SlideCanvasProps {
   slide: Slide
   theme: Theme
   isThumb?: boolean
+  /** Enable staggered entrance animations for elements (presentation mode) */
+  animate?: boolean
 }
 
-export default memo(function SlideCanvas({ slide, theme, isThumb }: SlideCanvasProps) {
+/** Render text with **bold** and *italic* markdown inline */
+function renderInlineMarkdown(text: string): React.ReactNode {
+  // Split on **bold** and *italic* patterns
+  const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/g)
+  return parts.map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={i}>{part.slice(2, -2)}</strong>
+    }
+    if (part.startsWith('*') && part.endsWith('*')) {
+      return <em key={i}>{part.slice(1, -1)}</em>
+    }
+    return part
+  })
+}
+
+/** Safely coerce a JSON column to string[] — handles string, array, or null */
+function toArray(val: unknown): string[] {
+  if (Array.isArray(val)) return val.map(String)
+  if (typeof val === 'string') {
+    try { const parsed = JSON.parse(val); if (Array.isArray(parsed)) return parsed.map(String) } catch { /* ignore */ }
+    return [val]
+  }
+  return []
+}
+
+export default memo(function SlideCanvas({ slide, theme, isThumb, animate }: SlideCanvasProps) {
   const t = isThumb
   const isFun = !!theme.emojiSet
+
+  // Staggered animation helper — returns inline style for nth element
+  const anim = (index: number): React.CSSProperties =>
+    animate
+      ? {
+          opacity: 0,
+          transform: 'translateY(18px)',
+          animation: `slidecanvas-enter 0.45s ease-out ${index * 0.12}s forwards`,
+        }
+      : {}
 
   // Deterministic emoji positions based on slide position
   const emojiPositions = isFun && theme.emojiSet ? getEmojiPositions(slide.position, theme.emojiSet) : []
@@ -103,27 +141,28 @@ export default memo(function SlideCanvas({ slide, theme, isThumb }: SlideCanvasP
           {!t && (
             <div
               className="mb-8 h-1 w-16 rounded-full"
-              style={{ backgroundColor: theme.accentColor }}
+              style={{ backgroundColor: theme.accentColor, ...anim(0) }}
             />
           )}
           <h1
             className={`font-bold tracking-tight ${t ? 'text-lg leading-tight' : 'text-[3.5rem] leading-[1.15]'}`}
-            style={{ color: theme.headlineColor }}
+            style={{ color: theme.headlineColor, ...anim(1) }}
           >
             {slide.headline}
           </h1>
           {slide.body && (
             <p
               className={`max-w-2xl leading-relaxed ${t ? 'mt-2 text-xs opacity-70' : 'mt-8 text-xl opacity-65'}`}
+              style={anim(2)}
             >
-              {slide.body}
+              {renderInlineMarkdown(slide.body!)}
             </p>
           )}
           {/* Bottom accent bar */}
           {!t && (
             <div
               className="absolute bottom-16 h-1 w-32 rounded-full"
-              style={{ backgroundColor: theme.accentColor, opacity: 0.4 }}
+              style={{ backgroundColor: theme.accentColor, opacity: 0.4, ...anim(3) }}
             />
           )}
         </div>
@@ -140,15 +179,16 @@ export default memo(function SlideCanvas({ slide, theme, isThumb }: SlideCanvasP
           )}
           <h2
             className={`font-bold tracking-tight ${t ? 'text-lg' : 'pl-6 text-[2.75rem] leading-[1.2]'}`}
-            style={{ color: theme.headlineColor }}
+            style={{ color: theme.headlineColor, ...anim(0) }}
           >
             {slide.headline}
           </h2>
           <ul className={t ? 'mt-4 flex-1 space-y-2' : 'mt-10 flex-1 space-y-6 pl-6'}>
-            {slide.bullets?.map((bullet, i) => (
+            {toArray(slide.bullets).map((bullet, i) => (
               <li
                 key={i}
                 className={`flex items-start ${t ? 'gap-2' : 'gap-5'}`}
+                style={anim(i + 1)}
               >
                 {isFun && theme.emojiSet ? (
                   <span className={`shrink-0 ${t ? 'text-sm' : 'text-2xl'}`}>
@@ -160,7 +200,7 @@ export default memo(function SlideCanvas({ slide, theme, isThumb }: SlideCanvasP
                     style={{ backgroundColor: theme.accentColor }}
                   />
                 )}
-                <span className={t ? 'text-xs' : 'text-xl leading-relaxed'}>{bullet}</span>
+                <span className={t ? 'text-xs' : 'text-xl leading-relaxed'}>{renderInlineMarkdown(bullet)}</span>
               </li>
             ))}
           </ul>
@@ -171,7 +211,7 @@ export default memo(function SlideCanvas({ slide, theme, isThumb }: SlideCanvasP
         <div className={`flex h-full flex-col ${t ? 'p-4' : 'p-16'}`}>
           <h2
             className={`font-bold tracking-tight ${t ? 'text-lg' : 'text-[2.75rem] leading-[1.2]'}`}
-            style={{ color: theme.headlineColor }}
+            style={{ color: theme.headlineColor, ...anim(0) }}
           >
             {slide.headline}
           </h2>
@@ -186,10 +226,11 @@ export default memo(function SlideCanvas({ slide, theme, isThumb }: SlideCanvasP
               />
             )}
             <ul className={t ? 'space-y-1' : 'space-y-5'}>
-              {slide.leftColumn?.map((item, i) => (
+              {toArray(slide.leftColumn).map((item, i) => (
                 <li
                   key={i}
                   className={`flex items-start ${t ? 'gap-2' : 'gap-4'}`}
+                  style={anim(i + 1)}
                 >
                   {isFun && theme.emojiSet ? (
                     <span className={`shrink-0 ${t ? 'text-sm' : 'text-xl'}`}>
@@ -201,15 +242,16 @@ export default memo(function SlideCanvas({ slide, theme, isThumb }: SlideCanvasP
                       style={{ backgroundColor: theme.accentColor }}
                     />
                   )}
-                  <span className={t ? 'text-xs' : 'text-lg leading-relaxed'}>{item}</span>
+                  <span className={t ? 'text-xs' : 'text-lg leading-relaxed'}>{renderInlineMarkdown(item)}</span>
                 </li>
               ))}
             </ul>
             <ul className={t ? 'space-y-1' : 'space-y-5'}>
-              {slide.rightColumn?.map((item, i) => (
+              {toArray(slide.rightColumn).map((item, i) => (
                 <li
                   key={i}
                   className={`flex items-start ${t ? 'gap-2' : 'gap-4'}`}
+                  style={anim(i + 1 + (slide.leftColumn?.length ?? 0))}
                 >
                   {isFun && theme.emojiSet ? (
                     <span className={`shrink-0 ${t ? 'text-sm' : 'text-xl'}`}>
@@ -221,7 +263,7 @@ export default memo(function SlideCanvas({ slide, theme, isThumb }: SlideCanvasP
                       style={{ backgroundColor: theme.accentColor }}
                     />
                   )}
-                  <span className={t ? 'text-xs' : 'text-lg leading-relaxed'}>{item}</span>
+                  <span className={t ? 'text-xs' : 'text-lg leading-relaxed'}>{renderInlineMarkdown(item)}</span>
                 </li>
               ))}
             </ul>
@@ -236,18 +278,18 @@ export default memo(function SlideCanvas({ slide, theme, isThumb }: SlideCanvasP
           {/* Large decorative quote mark */}
           <div
             className={`font-serif leading-none ${t ? 'text-3xl' : 'text-[120px]'}`}
-            style={{ color: theme.accentColor, opacity: 0.15 }}
+            style={{ color: theme.accentColor, opacity: 0.15, ...anim(0) }}
           >
             &ldquo;
           </div>
           <blockquote
             className={`max-w-3xl font-medium italic leading-relaxed ${t ? '-mt-2 text-sm' : '-mt-8 text-[1.75rem]'}`}
-            style={{ color: theme.headlineColor }}
+            style={{ color: theme.headlineColor, ...anim(1) }}
           >
-            {slide.quote}
+            {renderInlineMarkdown(slide.quote!)}
           </blockquote>
           {slide.attribution && (
-            <div className={`flex items-center gap-3 ${t ? 'mt-3' : 'mt-10'}`}>
+            <div className={`flex items-center gap-3 ${t ? 'mt-3' : 'mt-10'}`} style={anim(2)}>
               {!t && (
                 <div
                   className="h-px w-8"
@@ -277,15 +319,16 @@ export default memo(function SlideCanvas({ slide, theme, isThumb }: SlideCanvasP
           >
             <h2
               className={`font-bold tracking-tight ${t ? 'text-lg' : 'text-[2.75rem] leading-[1.2]'}`}
-              style={{ color: theme.headlineColor }}
+              style={{ color: theme.headlineColor, ...anim(0) }}
             >
               {slide.headline}
             </h2>
             {slide.body && (
               <p
                 className={`leading-relaxed ${t ? 'mt-2 text-xs opacity-70' : 'mt-6 text-xl opacity-70'}`}
+                style={anim(1)}
               >
-                {slide.body}
+                {renderInlineMarkdown(slide.body!)}
               </p>
             )}
             {slide.bullets && (
@@ -305,7 +348,7 @@ export default memo(function SlideCanvas({ slide, theme, isThumb }: SlideCanvasP
                         style={{ backgroundColor: theme.accentColor }}
                       />
                     )}
-                    <span className={t ? 'text-xs' : 'text-lg leading-relaxed'}>{bullet}</span>
+                    <span className={t ? 'text-xs' : 'text-lg leading-relaxed'}>{renderInlineMarkdown(bullet)}</span>
                   </li>
                 ))}
               </ul>
@@ -338,8 +381,45 @@ export default memo(function SlideCanvas({ slide, theme, isThumb }: SlideCanvasP
         </div>
       )}
 
+      {slide.layout === 'chart' && (
+        <div className={`flex h-full flex-col ${t ? 'p-4' : 'p-12'}`}>
+          <h2
+            className={`font-bold tracking-tight ${t ? 'text-base' : 'text-[2.5rem] leading-[1.2]'}`}
+            style={{ color: theme.headlineColor, ...anim(0) }}
+          >
+            {slide.headline}
+          </h2>
+          <div className={`flex flex-1 items-center justify-center ${t ? 'mt-2' : 'mt-4'}`} style={anim(1)}>
+            {slide.chartData ? (
+              <ChartRenderer
+                data={slide.chartData}
+                theme={theme}
+                width={t ? 200 : 1050}
+                height={t ? 120 : 520}
+                isThumb={t}
+              />
+            ) : (
+              <div
+                className={`flex items-center justify-center rounded-xl ${t ? 'h-20 w-32' : 'h-80 w-[600px]'}`}
+                style={{ backgroundColor: theme.accentColor, opacity: 0.08 }}
+              >
+                <span className={`font-medium opacity-40 ${t ? 'text-[8px]' : 'text-sm'}`}>No chart data</span>
+              </div>
+            )}
+          </div>
+          {slide.body && (
+            <p
+              className={`text-center leading-relaxed opacity-50 ${t ? 'mt-1 text-[7px]' : 'mt-2 text-sm'}`}
+              style={anim(2)}
+            >
+              {renderInlineMarkdown(slide.body!)}
+            </p>
+          )}
+        </div>
+      )}
+
       {/* Fallback for unknown layout */}
-      {!['title', 'bullets', 'two-column', 'quote', 'image-text'].includes(
+      {!['title', 'bullets', 'two-column', 'quote', 'image-text', 'chart'].includes(
         slide.layout,
       ) && (
         <div className={`flex h-full flex-col ${t ? 'p-4' : 'p-16'}`}>
@@ -353,7 +433,7 @@ export default memo(function SlideCanvas({ slide, theme, isThumb }: SlideCanvasP
             <p
               className={`leading-relaxed opacity-75 ${t ? 'mt-2 text-xs' : 'mt-6 text-xl'}`}
             >
-              {slide.body}
+              {renderInlineMarkdown(slide.body!)}
             </p>
           )}
         </div>

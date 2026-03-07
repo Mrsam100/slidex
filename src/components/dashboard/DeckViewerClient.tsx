@@ -33,6 +33,8 @@ import {
   Keyboard,
   AlertTriangle,
   RefreshCw,
+  BarChart3 as BarChartIcon,
+  Lightbulb,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Reorder, useDragControls } from 'framer-motion'
@@ -40,11 +42,12 @@ import type { Slide, SlideLayout, Theme, DeckStatus } from '@/types/deck'
 import { THEMES } from '@/lib/themes'
 import SlideThumb from '@/components/slides/SlideThumb'
 import EditableSlide from '@/components/editor/EditableSlide'
-import RewritePopover from '@/components/editor/RewritePopover'
-import ThemePicker from '@/components/slides/ThemePicker'
+import SlideAIMenu from '@/components/editor/SlideAIMenu'
+import ThemePicker, { resolveTheme } from '@/components/slides/ThemePicker'
 import PresentMode from './PresentMode'
 import SlideActionBar from '@/components/editor/SlideActionBar'
 import KeyboardShortcutsHelp from '@/components/editor/KeyboardShortcutsHelp'
+import SlideCoach from '@/components/editor/SlideCoach'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 
 interface DeckViewerClientProps {
@@ -67,7 +70,8 @@ export default function DeckViewerClient({
 }: DeckViewerClientProps) {
   const router = useRouter()
   const [slides, setSlides] = useState(initialSlides)
-  const [activeTheme, setActiveTheme] = useState(theme)
+  // Resolve custom themes client-side (server only knows built-in themes)
+  const [activeTheme, setActiveTheme] = useState(() => resolveTheme(deck.theme))
   const [deckStatus, setDeckStatus] = useState<DeckStatus>(deck.status as DeckStatus)
   const [activeSlideId, setActiveSlideId] = useState<string | null>(slides[0]?.id ?? null)
   const [showPresent, setShowPresent] = useState(false)
@@ -86,6 +90,7 @@ export default function DeckViewerClient({
   const [showLeftSidebar, setShowLeftSidebar] = useState(true)
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false)
   const [showJumpTo, setShowJumpTo] = useState(false)
+  const [showCoach, setShowCoach] = useState(false)
 
   // Loading states for async operations
   const [movingSlideId, setMovingSlideId] = useState<string | null>(null)
@@ -93,6 +98,7 @@ export default function DeckViewerClient({
   const [deletingSlideId, setDeletingSlideId] = useState<string | null>(null)
   const [addingAtPosition, setAddingAtPosition] = useState<number | null>(null)
   const [isRetrying, setIsRetrying] = useState(false)
+  const [isRedesigning, setIsRedesigning] = useState(false)
 
   // Undo/Redo
   const undoStackRef = useRef<HistoryEntry[]>([])
@@ -306,6 +312,7 @@ export default function DeckViewerClient({
         attribution: slide.attribution,
         speakerNotes: slide.speakerNotes,
         imageUrl: slide.imageUrl,
+        chartData: slide.chartData,
       }
       await fetch(`/api/slides/${newSlideId}`, {
         method: 'PATCH',
@@ -391,6 +398,7 @@ export default function DeckViewerClient({
         attribution: deletedSlide.attribution,
         speakerNotes: deletedSlide.speakerNotes,
         imageUrl: deletedSlide.imageUrl,
+        chartData: deletedSlide.chartData,
       }
       await fetch(`/api/slides/${newSlideId}`, {
         method: 'PATCH',
@@ -495,8 +503,8 @@ export default function DeckViewerClient({
         body: JSON.stringify({ theme: pendingThemeId }),
       })
       if (!res.ok) throw new Error()
-      const newTheme = THEMES.find((t) => t.id === pendingThemeId)
-      if (newTheme) setActiveTheme(newTheme)
+      const newTheme = resolveTheme(pendingThemeId)
+      setActiveTheme(newTheme)
       setShowThemeModal(false)
       toast.success('Theme updated')
     } catch {
@@ -639,6 +647,30 @@ export default function DeckViewerClient({
       toast.error('Failed to retry generation')
     } finally {
       setIsRetrying(false)
+    }
+  }
+
+  /* ─── One-click Redesign ─── */
+  async function handleRedesign() {
+    if (isRedesigning || slides.length === 0) return
+    setIsRedesigning(true)
+    try {
+      const res = await fetch(`/api/decks/${deck.id}/redesign`, { method: 'POST' })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        toast.error(data.error || 'Redesign failed')
+        return
+      }
+      const data = await res.json()
+      setSlides(data.slides as Slide[])
+      const newTheme = resolveTheme(data.theme)
+      setActiveTheme(newTheme)
+      setPendingThemeId(data.theme)
+      toast.success('Deck redesigned!')
+    } catch {
+      toast.error('Redesign failed')
+    } finally {
+      setIsRedesigning(false)
     }
   }
 
@@ -819,6 +851,15 @@ export default function DeckViewerClient({
             <Palette className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Theme</span>
           </button>
+          <button
+            onClick={handleRedesign}
+            disabled={isRedesigning || slides.length === 0 || isGenerating}
+            className="flex items-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium text-mid transition-colors hover:bg-gray-100 hover:text-dark disabled:opacity-50 sm:px-3"
+            title="Redesign with different theme and layouts"
+          >
+            {isRedesigning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+            <span className="hidden sm:inline">{isRedesigning ? 'Redesigning...' : 'Redesign'}</span>
+          </button>
           <ExportDropdown
             isExporting={isExporting}
             exportFormat={exportFormat}
@@ -852,6 +893,20 @@ export default function DeckViewerClient({
           )}
 
           <div className="mx-0.5 h-5 w-px bg-gray-200 sm:mx-1" />
+
+          {/* AI Coach */}
+          <button
+            onClick={() => setShowCoach((v) => !v)}
+            className={`flex items-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium transition-colors sm:px-3 ${
+              showCoach
+                ? 'bg-amber-50 text-amber-600'
+                : 'text-mid hover:bg-gray-100 hover:text-dark'
+            }`}
+            title="AI Slide Coach"
+          >
+            <Lightbulb className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Coach</span>
+          </button>
 
           {/* Shortcuts help */}
           <button
@@ -994,50 +1049,20 @@ export default function DeckViewerClient({
                     </div>
                   )}
 
-                  {/* Slide action buttons (top bar) — always visible on touch, hover on desktop */}
-                  <div className="absolute left-3 top-3 z-10 flex items-center gap-1 transition-opacity md:opacity-0 md:group-hover/card:opacity-100">
-                    <RewritePopover
+                  {/* Gamma-style 3-button toolbar (⋮ · ⊘∨ · ✦∨) */}
+                  <div className="absolute left-3 top-3 z-10 transition-opacity md:opacity-0 md:group-hover/card:opacity-100">
+                    <SlideAIMenu
                       slide={slide}
-                      onAccept={(updates) => patchSlide(slide.id, updates, 'Rewrite applied')}
+                      onAccept={(updates) => patchSlide(slide.id, updates, 'AI edit applied')}
+                      onLayoutChange={(layout) => patchSlide(slide.id, { layout } as Partial<Slide>)}
+                      onMoveUp={() => handleMoveSlide(slide.id, 'up')}
+                      onMoveDown={() => handleMoveSlide(slide.id, 'down')}
+                      onDuplicate={() => handleDuplicateSlide(slide)}
+                      onDelete={() => handleDeleteSlide(slide.id)}
+                      canMoveUp={i > 0}
+                      canMoveDown={i < slides.length - 1}
+                      canDelete={slides.length > 1}
                     />
-                  </div>
-                  <div className="absolute right-3 top-3 z-10 flex items-center gap-1 transition-opacity md:opacity-0 md:group-hover/card:opacity-100">
-                    {i > 0 && (
-                      <button
-                        onClick={() => handleMoveSlide(slide.id, 'up')}
-                        disabled={movingSlideId === slide.id}
-                        className="rounded-lg bg-white/95 p-1.5 text-grey shadow-sm ring-1 ring-black/5 backdrop-blur-sm transition-all hover:bg-white hover:text-dark hover:shadow-md disabled:opacity-50"
-                        title="Move up"
-                      >
-                        {movingSlideId === slide.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ChevronUp className="h-3.5 w-3.5" />}
-                      </button>
-                    )}
-                    {i < slides.length - 1 && (
-                      <button
-                        onClick={() => handleMoveSlide(slide.id, 'down')}
-                        disabled={movingSlideId === slide.id}
-                        className="rounded-lg bg-white/95 p-1.5 text-grey shadow-sm ring-1 ring-black/5 backdrop-blur-sm transition-all hover:bg-white hover:text-dark hover:shadow-md disabled:opacity-50"
-                        title="Move down"
-                      >
-                        {movingSlideId === slide.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ChevronDown className="h-3.5 w-3.5" />}
-                      </button>
-                    )}
-                    <button
-                      onClick={() => handleDuplicateSlide(slide)}
-                      disabled={duplicatingSlideId === slide.id}
-                      className="rounded-lg bg-white/95 p-1.5 text-grey shadow-sm ring-1 ring-black/5 backdrop-blur-sm transition-all hover:bg-white hover:text-dark hover:shadow-md disabled:opacity-50"
-                      title="Duplicate slide"
-                    >
-                      {duplicatingSlideId === slide.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Copy className="h-3.5 w-3.5" />}
-                    </button>
-                    <button
-                      onClick={() => handleDeleteSlide(slide.id)}
-                      disabled={deletingSlideId === slide.id}
-                      className="rounded-lg bg-white/95 p-1.5 text-grey shadow-sm ring-1 ring-black/5 backdrop-blur-sm transition-all hover:bg-red-50 hover:text-error hover:ring-red-200 disabled:opacity-50"
-                      title="Delete slide"
-                    >
-                      {deletingSlideId === slide.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
-                    </button>
                   </div>
 
                   <SlideEditor
@@ -1072,6 +1097,20 @@ export default function DeckViewerClient({
             )}
           </div>
         </main>
+
+        {/* Right sidebar: AI Coach */}
+        {showCoach && (
+          <SlideCoach
+            slides={slides}
+            activeSlideId={activeSlideId}
+            onClose={() => setShowCoach(false)}
+            onGoToSlide={(slideId) => {
+              setActiveSlideId(slideId)
+              const el = slideRefs.current.get(slideId)
+              el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            }}
+          />
+        )}
       </div>
     </div>
   )
@@ -1220,6 +1259,7 @@ const LAYOUT_OPTIONS: { id: SlideLayout; label: string; icon: React.ReactNode }[
   { id: 'two-column', label: 'Two Column', icon: <Columns2 className="h-3.5 w-3.5" /> },
   { id: 'quote', label: 'Quote', icon: <Quote className="h-3.5 w-3.5" /> },
   { id: 'image-text', label: 'Image + Text', icon: <ImageIcon className="h-3.5 w-3.5" /> },
+  { id: 'chart', label: 'Chart', icon: <BarChartIcon className="h-3.5 w-3.5" /> },
 ]
 
 function LayoutDropdown({

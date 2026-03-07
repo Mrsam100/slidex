@@ -51,7 +51,7 @@ export function Navbar() {
             transition={{ delay: 0.3 }}
           >
             <Link
-              href="/signin"
+              href="/dashboard"
               className="text-sm text-gray-300 transition-colors hover:text-white"
             >
               Sign in
@@ -65,7 +65,7 @@ export function Navbar() {
             whileTap={{ scale: 0.97 }}
           >
             <Link
-              href="/generate"
+              href="/dashboard"
               className="rounded-lg bg-brand-blue px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-brand-blue/25 transition-all hover:bg-brand-blue/90 hover:shadow-xl hover:shadow-brand-blue/30"
             >
               Get started free
@@ -119,14 +119,14 @@ export function Navbar() {
               ))}
               <div className="h-px bg-white/10" />
               <Link
-                href="/signin"
+                href="/dashboard"
                 className="text-sm text-gray-300 transition-colors hover:text-white"
                 onClick={() => setMobileOpen(false)}
               >
                 Sign in
               </Link>
               <Link
-                href="/generate"
+                href="/dashboard"
                 className="rounded-lg bg-brand-blue px-5 py-2 text-center text-sm font-semibold text-white transition-colors hover:bg-brand-blue/90"
                 onClick={() => setMobileOpen(false)}
               >

@@ -222,7 +222,7 @@ export default function PublicDeckViewer({
               animation: 'public-slide-in 250ms ease-out',
             }}
           >
-            <SlideCanvas slide={currentSlide} theme={theme} />
+            <SlideCanvas slide={currentSlide} theme={theme} animate />
           </div>
         </div>
 

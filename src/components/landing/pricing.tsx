@@ -20,7 +20,7 @@ function getPlans(isAnnual: boolean) {
         'Public share links',
       ],
       cta: 'Get started',
-      href: '/generate',
+      href: '/dashboard',
       highlighted: false,
     },
     {

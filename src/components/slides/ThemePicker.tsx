@@ -1,10 +1,12 @@
 'use client'
 
-import { CheckCircle, Lock } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
+import { CheckCircle, Lock, Plus } from 'lucide-react'
 import { THEMES } from '@/lib/themes'
 import { cn } from '@/lib/utils'
 import type { Slide, Theme } from '@/types/deck'
 import SlideCanvas from './SlideCanvas'
+import CustomThemeEditor, { loadCustomThemes, CustomThemeManager } from './CustomThemeEditor'
 
 interface ThemePickerProps {
   selectedTheme: string
@@ -87,20 +89,65 @@ export default function ThemePicker({
   onSelect,
   isProUser = true,
 }: ThemePickerProps) {
+  const [customThemes, setCustomThemes] = useState<Theme[]>([])
+  const [showEditor, setShowEditor] = useState(false)
+
+  const refreshCustom = useCallback(() => {
+    setCustomThemes(loadCustomThemes())
+  }, [])
+
+  useEffect(() => {
+    refreshCustom()
+  }, [refreshCustom])
+
+  const allThemes = [...THEMES, ...customThemes]
+
   return (
-    <div role="radiogroup" aria-label="Presentation theme" className="flex flex-wrap justify-center gap-3">
-      {THEMES.map((theme) => {
-        const isLocked = !isProUser && theme.id !== 'minimal'
-        return (
-          <ThemeCard
-            key={theme.id}
-            theme={theme}
-            isSelected={selectedTheme === theme.id}
-            isLocked={isLocked}
-            onSelect={() => onSelect(theme.id)}
-          />
-        )
-      })}
+    <div>
+      <div role="radiogroup" aria-label="Presentation theme" className="flex flex-wrap justify-center gap-3">
+        {allThemes.map((theme) => {
+          const isBuiltIn = THEMES.some((t) => t.id === theme.id)
+          const isLocked = !isProUser && isBuiltIn && theme.id !== 'minimal'
+          return (
+            <ThemeCard
+              key={theme.id}
+              theme={theme}
+              isSelected={selectedTheme === theme.id}
+              isLocked={isLocked}
+              onSelect={() => onSelect(theme.id)}
+            />
+          )
+        })}
+        {/* Create custom theme button */}
+        <button
+          onClick={() => setShowEditor(true)}
+          className="flex flex-col items-center gap-2.5 rounded-xl border-2 border-dashed border-gray-200 p-2.5 transition-all hover:border-brand-blue/30 hover:bg-brand-blue/5"
+        >
+          <div className="flex aspect-video w-40 items-center justify-center rounded-lg bg-gray-50">
+            <Plus className="h-6 w-6 text-grey" />
+          </div>
+          <span className="text-xs font-semibold text-grey">Custom</span>
+        </button>
+      </div>
+
+      <CustomThemeManager onClose={() => {}} onChanged={refreshCustom} />
+
+      {showEditor && (
+        <CustomThemeEditor
+          onClose={() => setShowEditor(false)}
+          onThemeSaved={refreshCustom}
+        />
+      )}
     </div>
   )
+}
+
+/** Resolve a theme ID to a Theme object, checking custom themes too */
+export function resolveTheme(themeId: string): Theme {
+  const builtIn = THEMES.find((t) => t.id === themeId)
+  if (builtIn) return builtIn
+  const customs = loadCustomThemes()
+  const custom = customs.find((t) => t.id === themeId)
+  if (custom) return custom
+  return THEMES[0]!
 }

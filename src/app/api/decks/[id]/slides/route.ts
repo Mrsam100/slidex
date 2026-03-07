@@ -68,7 +68,7 @@ export async function GET(
 
 const postSchema = z.object({
   afterPosition: z.number().int().min(0),
-  layout: z.enum(['title', 'bullets', 'two-column', 'quote', 'image-text']).default('bullets'),
+  layout: z.enum(['title', 'bullets', 'two-column', 'quote', 'image-text', 'chart']).default('bullets'),
 })
 
 export async function POST(

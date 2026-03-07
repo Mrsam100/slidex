@@ -40,7 +40,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   return {
     title: `${deck.title} — SlideX`,
+    description: 'A presentation made with SlideX AI',
     openGraph: {
+      title: `${deck.title} — SlideX`,
+      description: 'A presentation made with SlideX AI',
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
       title: `${deck.title} — SlideX`,
       description: 'A presentation made with SlideX AI',
     },

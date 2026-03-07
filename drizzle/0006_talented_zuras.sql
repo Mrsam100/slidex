@@ -1,0 +1,1 @@
+ALTER TABLE "slides" ADD COLUMN "chart_data" json;

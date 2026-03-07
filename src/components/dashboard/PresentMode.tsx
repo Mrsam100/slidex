@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import {
   ChevronLeft,
   ChevronRight,
@@ -8,10 +9,12 @@ import {
   StickyNote,
   Timer,
   SkipForward,
+  Monitor,
 } from 'lucide-react'
 import type { Slide, Theme } from '@/types/deck'
 import SlideCanvas from '@/components/slides/SlideCanvas'
 import SlideThumb from '@/components/slides/SlideThumb'
+import PresenterWindowContent from './PresenterWindow'
 
 interface PresentModeProps {
   slides: Slide[]
@@ -41,10 +44,12 @@ export default function PresentMode({
   const [direction, setDirection] = useState<'left' | 'right'>('right')
   const [isBlankScreen, setIsBlankScreen] = useState(false)
   const [currentTime, setCurrentTime] = useState('')
+  const [presenterContainer, setPresenterContainer] = useState<HTMLElement | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const thumbStripRef = useRef<HTMLDivElement>(null)
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const presenterWindowRef = useRef<Window | null>(null)
 
   // Touch swipe state
   const touchStartRef = useRef<{ x: number; y: number } | null>(null)
@@ -159,6 +164,46 @@ export default function PresentMode({
     else goPrev()
   }
 
+  // Open presenter view in a separate window
+  function openPresenterWindow() {
+    if (presenterWindowRef.current && !presenterWindowRef.current.closed) {
+      presenterWindowRef.current.focus()
+      return
+    }
+    const win = window.open('', 'slidex-presenter', 'width=900,height=600')
+    if (!win) return
+    presenterWindowRef.current = win
+
+    // Copy stylesheets from main window
+    win.document.title = 'SlideX — Presenter View'
+    const head = win.document.head
+    for (const sheet of document.querySelectorAll('link[rel="stylesheet"], style')) {
+      head.appendChild(sheet.cloneNode(true))
+    }
+
+    // Create mount point
+    const root = win.document.createElement('div')
+    root.id = 'presenter-root'
+    win.document.body.style.margin = '0'
+    win.document.body.style.overflow = 'hidden'
+    win.document.body.appendChild(root)
+    setPresenterContainer(root)
+
+    win.addEventListener('beforeunload', () => {
+      presenterWindowRef.current = null
+      setPresenterContainer(null)
+    })
+  }
+
+  // Close presenter window on unmount
+  useEffect(() => {
+    return () => {
+      if (presenterWindowRef.current && !presenterWindowRef.current.closed) {
+        presenterWindowRef.current.close()
+      }
+    }
+  }, [])
+
   const currentSlide = slides[currentIndex]
   if (!currentSlide) return null
 
@@ -210,6 +255,15 @@ export default function PresentMode({
           >
             <StickyNote className="h-4 w-4" />
           </button>
+          {/* Presenter view pop-out */}
+          <button
+            onClick={openPresenterWindow}
+            className={`rounded-lg p-2 transition-colors ${presenterContainer ? 'bg-brand-blue/20 text-brand-blue' : 'text-white/40 hover:bg-white/10 hover:text-white/70'}`}
+            aria-label="Open presenter view"
+            title="Presenter view (pop-out)"
+          >
+            <Monitor className="h-4 w-4" />
+          </button>
           {/* Close */}
           <button
             onClick={onClose}
@@ -249,7 +303,7 @@ export default function PresentMode({
                 animation: 'present-slide-in 250ms ease-out',
               }}
             >
-              <SlideCanvas slide={currentSlide} theme={theme} />
+              <SlideCanvas slide={currentSlide} theme={theme} animate />
             </div>
           </div>
 
@@ -354,6 +408,17 @@ export default function PresentMode({
           }
         }
       `}</style>
+
+      {/* Presenter view portal into pop-out window */}
+      {presenterContainer && createPortal(
+        <PresenterWindowContent
+          slides={slides}
+          theme={theme}
+          currentIndex={currentIndex}
+          elapsedSeconds={elapsedSeconds}
+        />,
+        presenterContainer,
+      )}
     </div>
   )
 }

@@ -2,11 +2,11 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { generateText } from 'ai'
 import { google } from '@ai-sdk/google'
-import { and, eq, gte, isNull, sql } from 'drizzle-orm'
+import { and, eq, sql } from 'drizzle-orm'
 
 import { auth } from '@/auth'
 import { db } from '@/db'
-import { decks, users } from '@/db/schema'
+import { decks } from '@/db/schema'
 import { GEMINI_MODEL_PRO, OUTLINE_SYSTEM, outlineUserPrompt } from '@/lib/ai'
 import type { Outline } from '@/types/deck'
 
@@ -20,7 +20,7 @@ const outlineResponseSchema = z.object({
       z.object({
         position: z.number().int().min(1),
         title: z.string().min(1).max(200),
-        type: z.enum(['title', 'bullets', 'two-column', 'quote', 'image-text']),
+        type: z.enum(['title', 'bullets', 'two-column', 'quote', 'image-text', 'chart']),
       }),
     )
     .min(1)
@@ -37,6 +37,7 @@ const bodySchema = z.object({
   ]),
   tone: z.enum(['academic', 'professional', 'casual', 'creative']),
   audience: z.enum(['students', 'educators', 'business', 'general']),
+  language: z.string().min(2).max(10).optional().default('en'),
 })
 
 /** Try to parse JSON, stripping markdown fences if present */
@@ -70,36 +71,7 @@ export async function POST(req: Request) {
     )
   }
 
-  // 1c. Free tier limit: max 5 decks per month
-  const [user] = await db
-    .select({ subscriptionStatus: users.subscriptionStatus })
-    .from(users)
-    .where(eq(users.id, session.user.id))
-    .limit(1)
-
-  if (!user || user.subscriptionStatus === 'free') {
-    const startOfMonth = new Date()
-    startOfMonth.setDate(1)
-    startOfMonth.setHours(0, 0, 0, 0)
-
-    const [deckCount] = await db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(decks)
-      .where(
-        and(
-          eq(decks.userId, session.user.id),
-          isNull(decks.deletedAt),
-          gte(decks.createdAt, startOfMonth),
-        ),
-      )
-
-    if (deckCount && deckCount.count >= 5) {
-      return NextResponse.json(
-        { error: 'limit_reached' },
-        { status: 403 },
-      )
-    }
-  }
+  // Free tier limit removed — unlimited for everyone
 
   // 2. Validate body
   let body: unknown
@@ -114,7 +86,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Validation failed' }, { status: 400 })
   }
 
-  const { topic, slideCount, tone, audience } = parsed.data
+  const { topic, slideCount, tone, audience, language } = parsed.data
 
   // 3. Create deck row
   const [deck] = await db
@@ -147,7 +119,7 @@ export async function POST(req: Request) {
     const result = await generateText({
       model: google(GEMINI_MODEL_PRO),
       system: OUTLINE_SYSTEM,
-      prompt: outlineUserPrompt({ topic, slideCount, tone, audience, theme: 'minimal' }),
+      prompt: outlineUserPrompt({ topic, slideCount, tone, audience, theme: 'minimal', language }),
       maxOutputTokens: 4000,
     })
 
@@ -157,7 +129,7 @@ export async function POST(req: Request) {
       const retry = await generateText({
         model: google(GEMINI_MODEL_PRO),
         system: OUTLINE_SYSTEM,
-        prompt: `Return ONLY raw JSON. No markdown.\n\n${outlineUserPrompt({ topic, slideCount, tone, audience, theme: 'minimal' })}`,
+        prompt: `Return ONLY raw JSON. No markdown.\n\n${outlineUserPrompt({ topic, slideCount, tone, audience, theme: 'minimal', language })}`,
         maxOutputTokens: 4000,
       })
       parsed2 = validateOutline(parseJSON(retry.text))
@@ -175,7 +147,8 @@ export async function POST(req: Request) {
     }
 
     outline = parsed2
-  } catch {
+  } catch (err) {
+    console.error('[outline] AI generation error:', err)
     await db
       .update(decks)
       .set({ status: 'error' })

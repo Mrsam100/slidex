@@ -19,6 +19,7 @@ import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Reorder } from 'framer-motion'
 import type { OutlineItem, SlideLayout } from '@/types/deck'
+import { SUPPORTED_LANGUAGES } from '@/lib/ai'
 import ThemePicker from '@/components/slides/ThemePicker'
 
 /* ─── Types & Constants ─── */
@@ -31,6 +32,7 @@ interface GenState {
   tone: string
   audience: string
   theme: string
+  language: string
   outline: OutlineItem[]
   deckId: string | null
   isLoadingOutline: boolean
@@ -43,6 +45,7 @@ const INITIAL: GenState = {
   tone: 'professional',
   audience: 'general',
   theme: 'minimal',
+  language: 'en',
   outline: [],
   deckId: null,
   isLoadingOutline: false,
@@ -58,6 +61,7 @@ const LAYOUT_LABELS: Record<SlideLayout, string> = {
   'two-column': 'Two Column',
   quote: 'Quote',
   'image-text': 'Image + Text',
+  chart: 'Chart',
 }
 
 const CONTENT_LEVELS = [
@@ -189,6 +193,7 @@ export default function GeneratePage() {
           slideCount: state.slideCount,
           tone: state.tone,
           audience: state.audience,
+          language: state.language,
         }),
       })
       if (!res.ok) {
@@ -200,14 +205,8 @@ export default function GeneratePage() {
           toast.error('You have 3 decks generating at once. Wait for one to finish, then try again.')
           return
         }
-        if (res.status === 403) {
-          toast.error('You\'ve reached your free plan limit (5 decks/month). Upgrade to Pro for unlimited.')
-          return
-        }
         const data = await res.json().catch(() => ({}))
-        toast.error(data.error === 'limit_reached'
-          ? 'Free plan limit reached — upgrade to Pro for unlimited decks.'
-          : data.error || 'AI service is temporarily unavailable. Please try again in a moment.')
+        toast.error(data.error || 'AI service is temporarily unavailable. Please try again in a moment.')
         return
       }
       const data = await res.json()
@@ -242,6 +241,7 @@ export default function GeneratePage() {
           tone: state.tone,
           audience: state.audience,
           theme: state.theme,
+          language: state.language,
         }),
       })
 
@@ -256,7 +256,7 @@ export default function GeneratePage() {
           setIsGeneratingSlides(false)
           return
         }
-        toast.error(data.error || 'AI service is temporarily unavailable. Please try again in a moment.')
+        toast.error(data.detail || data.error || 'AI service is temporarily unavailable. Please try again in a moment.')
         setIsGeneratingSlides(false)
         return
       }
@@ -342,6 +342,16 @@ export default function GeneratePage() {
             onChange={(v) => set({ audience: v })}
             display={(v) => v.charAt(0).toUpperCase() + v.slice(1)}
             label="Audience"
+          />
+          <OptionDropdown
+            value={state.language}
+            options={SUPPORTED_LANGUAGES.map((l) => l.code)}
+            onChange={(v) => set({ language: v })}
+            display={(v) => {
+              const lang = SUPPORTED_LANGUAGES.find((l) => l.code === v)
+              return lang ? lang.name : v
+            }}
+            label="Language"
           />
         </div>
 

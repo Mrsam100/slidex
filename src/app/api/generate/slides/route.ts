@@ -8,7 +8,6 @@ import { auth } from '@/auth'
 import { db } from '@/db'
 import { decks, slides } from '@/db/schema'
 import { GEMINI_MODEL, SLIDE_SYSTEM, slideUserPrompt } from '@/lib/ai'
-import { THEMES } from '@/lib/themes'
 import type { OutlineItem } from '@/types/deck'
 
 export const dynamic = 'force-dynamic'
@@ -21,7 +20,7 @@ const bodySchema = z.object({
       z.object({
         position: z.number().int().min(1),
         title: z.string().min(1).max(200),
-        type: z.enum(['title', 'bullets', 'two-column', 'quote', 'image-text']),
+        type: z.enum(['title', 'bullets', 'two-column', 'quote', 'image-text', 'chart']),
       }),
     )
     .min(1)
@@ -29,7 +28,8 @@ const bodySchema = z.object({
   topic: z.string().min(3).max(500),
   tone: z.enum(['academic', 'professional', 'casual', 'creative']),
   audience: z.enum(['students', 'educators', 'business', 'general']),
-  theme: z.enum(THEMES.map((t) => t.id) as [string, ...string[]]),
+  theme: z.string().min(1).max(50),
+  language: z.string().min(2).max(10).optional().default('en'),
 })
 
 /** Fetch a high-quality stock photo from Lorem Picsum (free, no API key).
@@ -51,13 +51,42 @@ async function fetchStockImage(query: string, position: number): Promise<string 
   }
 }
 
-/** Try to parse JSON, stripping markdown fences if present */
+/** Strip markdown bold/italic from all string values in an object */
+function stripMarkdown(obj: Record<string, unknown>): Record<string, unknown> {
+  const clean = (s: string) => s.replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(.+?)\*/g, '$1').replace(/__(.+?)__/g, '$1')
+  const result: Record<string, unknown> = {}
+  for (const [k, v] of Object.entries(obj)) {
+    if (typeof v === 'string') result[k] = clean(v)
+    else if (Array.isArray(v)) result[k] = v.map(item => typeof item === 'string' ? clean(item) : item)
+    else result[k] = v
+  }
+  return result
+}
+
+/** Try to parse JSON, stripping markdown fences and fixing truncation */
 function parseJSON(text: string): unknown {
   let cleaned = text.trim()
   if (cleaned.startsWith('```')) {
     cleaned = cleaned.replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, '')
   }
-  return JSON.parse(cleaned)
+  try {
+    return JSON.parse(cleaned)
+  } catch {
+    // Try to fix truncated JSON by closing open brackets/braces/strings
+    let fixed = cleaned
+    // Close unterminated string
+    const dblQuotes = (fixed.match(/"/g) || []).length
+    if (dblQuotes % 2 !== 0) fixed += '"'
+    // Close open brackets/braces
+    const opens = (fixed.match(/[{[]/g) || []).length
+    const closes = (fixed.match(/[}\]]/g) || []).length
+    for (let i = 0; i < opens - closes; i++) {
+      // guess based on last opener
+      const lastOpen = Math.max(fixed.lastIndexOf('{'), fixed.lastIndexOf('['))
+      fixed += fixed[lastOpen] === '{' ? '}' : ']'
+    }
+    return JSON.parse(fixed)
+  }
 }
 
 export async function POST(req: Request) {
@@ -94,7 +123,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Validation failed' }, { status: 400 })
   }
 
-  const { deckId, outline, topic, tone, audience, theme } = parsed.data
+  const { deckId, outline, topic, tone, audience, theme, language } = parsed.data
 
   // 3. Verify deck exists, belongs to user, and is in draft status
   const [deck] = await db
@@ -136,8 +165,9 @@ export async function POST(req: Request) {
           tone,
           audience,
           theme,
+          language,
         }),
-        maxOutputTokens: 1000,
+        maxOutputTokens: 4000,
       })
 
       // 5b. Parse JSON with retry
@@ -155,10 +185,13 @@ export async function POST(req: Request) {
             audience,
             theme,
           })}`,
-          maxOutputTokens: 1000,
+          maxOutputTokens: 4000,
         })
         slideData = parseJSON(retry.text) as Record<string, unknown>
       }
+
+      // 5b2. Strip any markdown formatting from text values
+      slideData = stripMarkdown(slideData)
 
       // 5c. Fetch image for image-text slides
       let imageUrl: string | null = null
@@ -182,6 +215,7 @@ export async function POST(req: Request) {
         speakerNotes: (slideData.speakerNotes as string) || null,
         imagePrompt: (slideData.imageQuery as string) || null,
         imageUrl,
+        chartData: item.type === 'chart' && slideData.chartData ? slideData.chartData : null,
       })
 
       insertedCount++
@@ -204,15 +238,17 @@ export async function POST(req: Request) {
       deckId,
       slideCount: insertedCount,
     })
-  } catch {
+  } catch (err) {
     // Partial failure: keep inserted slides, mark deck as error
+    console.error('[slides] Generation error at slide', insertedCount + 1, ':', err)
     await db
       .update(decks)
       .set({ status: 'error', slideCount: insertedCount, updatedAt: new Date() })
       .where(eq(decks.id, deckId))
 
+    const errMsg = err instanceof Error ? err.message : String(err)
     return NextResponse.json(
-      { error: 'Slide generation failed', slidesCreated: insertedCount },
+      { error: 'Slide generation failed', detail: errMsg, slidesCreated: insertedCount },
       { status: 500 },
     )
   }
