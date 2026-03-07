@@ -10,6 +10,7 @@ export async function exportDeckToPDF(
   deckTitle: string,
   onProgress: (current: number, total: number) => void,
   signal?: AbortSignal,
+  options?: { includeNotes?: boolean },
 ): Promise<void> {
   const [
     { default: jsPDF },
@@ -85,6 +86,18 @@ export async function exportDeckToPDF(
         1280,
         720,
       )
+
+      // Add speaker notes page if requested
+      if (options?.includeNotes && slide.speakerNotes) {
+        pdf.addPage()
+        pdf.setFontSize(14)
+        pdf.setTextColor(100, 100, 100)
+        pdf.text(`Slide ${i + 1}: ${slide.headline || 'Untitled'}`, 40, 50)
+        pdf.setFontSize(11)
+        pdf.setTextColor(60, 60, 60)
+        const lines = pdf.splitTextToSize(slide.speakerNotes, 1200)
+        pdf.text(lines as string[], 40, 80)
+      }
 
       onProgress(i + 1, slides.length)
     } finally {

@@ -55,6 +55,19 @@ function useDebouncedSave(
   return { save, saveStatus }
 }
 
+/** Inline char count — only visible when approaching the limit */
+function CharCount({ current, max }: { current: number; max: number }) {
+  const ratio = current / max
+  if (ratio < 0.75) return null
+  return (
+    <span
+      className={`pointer-events-none absolute right-2 top-1 z-10 text-[10px] font-medium tabular-nums ${ratio >= 0.95 ? 'text-error/70' : 'text-black/20'}`}
+    >
+      {current}/{max}
+    </span>
+  )
+}
+
 export default function EditableSlide({ slide, theme, onSave }: EditableSlideProps) {
   const isFun = !!theme.emojiSet
   const [headline, setHeadline] = useState(slide.headline)
@@ -236,14 +249,17 @@ export default function EditableSlide({ slide, theme, onSave }: EditableSlidePro
             className="mb-8 h-1 w-16 rounded-full"
             style={{ backgroundColor: theme.accentColor }}
           />
-          <input
-            className={`${inputClass} text-center text-[3.5rem] font-bold leading-[1.15] tracking-tight`}
-            style={{ color: theme.headlineColor }}
-            value={headline}
-            onChange={(e) => updateHeadline(e.target.value)}
-            placeholder="Headline"
-            maxLength={200}
-          />
+          <div className="relative w-full">
+            <CharCount current={headline.length} max={200} />
+            <input
+              className={`${inputClass} text-center text-[3.5rem] font-bold leading-[1.15] tracking-tight`}
+              style={{ color: theme.headlineColor }}
+              value={headline}
+              onChange={(e) => updateHeadline(e.target.value)}
+              placeholder="Headline"
+              maxLength={200}
+            />
+          </div>
           <textarea
             className={`${inputClass} mt-8 max-w-2xl resize-none text-center text-xl leading-relaxed opacity-65`}
             value={body}
@@ -265,14 +281,17 @@ export default function EditableSlide({ slide, theme, onSave }: EditableSlidePro
               style={{ backgroundColor: theme.accentColor, opacity: 0.2 }}
             />
           )}
-          <input
-            className={`${inputClass} pl-6 text-[2.75rem] font-bold leading-[1.2] tracking-tight`}
-            style={{ color: theme.headlineColor }}
-            value={headline}
-            onChange={(e) => updateHeadline(e.target.value)}
-            placeholder="Headline"
-            maxLength={200}
-          />
+          <div className="relative">
+            <CharCount current={headline.length} max={200} />
+            <input
+              className={`${inputClass} pl-6 text-[2.75rem] font-bold leading-[1.2] tracking-tight`}
+              style={{ color: theme.headlineColor }}
+              value={headline}
+              onChange={(e) => updateHeadline(e.target.value)}
+              placeholder="Headline"
+              maxLength={200}
+            />
+          </div>
           <ul className="mt-10 flex-1 space-y-6 pl-6">
             {bullets.map((bullet, i) => (
               <li key={i} className="group flex items-start gap-5">
@@ -317,14 +336,17 @@ export default function EditableSlide({ slide, theme, onSave }: EditableSlidePro
       {/* ─── Two-column layout ─── */}
       {slide.layout === 'two-column' && (
         <div className="flex h-full flex-col p-16">
-          <input
-            className={`${inputClass} text-[2.75rem] font-bold leading-[1.2] tracking-tight`}
-            style={{ color: theme.headlineColor }}
-            value={headline}
-            onChange={(e) => updateHeadline(e.target.value)}
-            placeholder="Headline"
-            maxLength={200}
-          />
+          <div className="relative">
+            <CharCount current={headline.length} max={200} />
+            <input
+              className={`${inputClass} text-[2.75rem] font-bold leading-[1.2] tracking-tight`}
+              style={{ color: theme.headlineColor }}
+              value={headline}
+              onChange={(e) => updateHeadline(e.target.value)}
+              placeholder="Headline"
+              maxLength={200}
+            />
+          </div>
           <div className="relative mt-10 grid flex-1 grid-cols-2 gap-16">
             {/* Column divider */}
             <div
@@ -389,18 +411,21 @@ export default function EditableSlide({ slide, theme, onSave }: EditableSlidePro
           >
             &ldquo;
           </div>
-          <textarea
-            className={`${inputClass} -mt-8 max-w-3xl resize-none text-center text-[1.75rem] font-medium italic leading-relaxed`}
-            style={{ color: theme.headlineColor }}
-            value={quote}
-            onChange={(e) => {
-              setQuote(e.target.value)
-              triggerSave({ quote: e.target.value || undefined })
-            }}
-            placeholder="Quote text"
-            rows={3}
-            maxLength={1000}
-          />
+          <div className="relative -mt-8 max-w-3xl">
+            <CharCount current={quote.length} max={1000} />
+            <textarea
+              className={`${inputClass} resize-none text-center text-[1.75rem] font-medium italic leading-relaxed`}
+              style={{ color: theme.headlineColor }}
+              value={quote}
+              onChange={(e) => {
+                setQuote(e.target.value)
+                triggerSave({ quote: e.target.value || undefined })
+              }}
+              placeholder="Quote text"
+              rows={3}
+              maxLength={1000}
+            />
+          </div>
           <div className="mt-10 flex items-center gap-3">
             <div
               className="h-px w-8"
@@ -428,14 +453,17 @@ export default function EditableSlide({ slide, theme, onSave }: EditableSlidePro
       {slide.layout === 'image-text' && (
         <div className="flex h-full">
           <div className="flex w-[55%] flex-col justify-center p-16 pr-12">
-            <input
-              className={`${inputClass} text-[2.75rem] font-bold leading-[1.2] tracking-tight`}
-              style={{ color: theme.headlineColor }}
-              value={headline}
-              onChange={(e) => updateHeadline(e.target.value)}
-              placeholder="Headline"
-              maxLength={200}
-            />
+            <div className="relative">
+              <CharCount current={headline.length} max={200} />
+              <input
+                className={`${inputClass} text-[2.75rem] font-bold leading-[1.2] tracking-tight`}
+                style={{ color: theme.headlineColor }}
+                value={headline}
+                onChange={(e) => updateHeadline(e.target.value)}
+                placeholder="Headline"
+                maxLength={200}
+              />
+            </div>
             <textarea
               className={`${inputClass} mt-6 resize-none text-xl leading-relaxed opacity-70`}
               value={body}

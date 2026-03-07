@@ -11,6 +11,14 @@ interface RewritePopoverProps {
 
 type PopoverState = 'closed' | 'input' | 'loading' | 'preview'
 
+const SUGGESTION_CHIPS = [
+  'Make it shorter',
+  'More professional',
+  'Add a statistic',
+  'Simplify the language',
+  'Make it persuasive',
+] as const
+
 interface RewriteResult {
   headline?: string
   body?: string
@@ -158,6 +166,18 @@ export default function RewritePopover({ slide, onAccept }: RewritePopoverProps)
               placeholder="e.g. Make it more concise"
               maxLength={200}
             />
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {SUGGESTION_CHIPS.map((chip) => (
+                <button
+                  key={chip}
+                  type="button"
+                  onClick={() => setInstruction(chip)}
+                  className="rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-[11px] font-medium text-mid transition-colors hover:border-brand-blue/30 hover:bg-brand-blue/5 hover:text-brand-blue"
+                >
+                  {chip}
+                </button>
+              ))}
+            </div>
             {error && (
               <p className="mt-1.5 text-xs text-error">{error}</p>
             )}

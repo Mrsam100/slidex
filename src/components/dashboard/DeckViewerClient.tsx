@@ -78,12 +78,14 @@ export default function DeckViewerClient({
   const [exportFormat, setExportFormat] = useState<'pdf' | 'pptx' | null>(null)
   const [exportProgress, setExportProgress] = useState<{ current: number; total: number } | null>(null)
   const [showExportMenu, setShowExportMenu] = useState(false)
+  const [exportWithNotes, setExportWithNotes] = useState(false)
   const [isPublic, setIsPublic] = useState(deck.isPublic)
   const [isTogglingShare, setIsTogglingShare] = useState(false)
   const [deckTitle, setDeckTitle] = useState(deck.title)
   const [isEditingTitle, setIsEditingTitle] = useState(false)
   const [showLeftSidebar, setShowLeftSidebar] = useState(true)
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false)
+  const [showJumpTo, setShowJumpTo] = useState(false)
 
   // Loading states for async operations
   const [movingSlideId, setMovingSlideId] = useState<string | null>(null)
@@ -107,6 +109,7 @@ export default function DeckViewerClient({
   /* ─── Keyboard Shortcuts ─── */
   const shortcuts = useMemo(() => [
     { key: 'f', handler: () => { if (slides.length > 0) setShowPresent(true) }, ignoreInputs: true },
+    { key: 'g', handler: () => { if (slides.length > 1) setShowJumpTo(true) }, ignoreInputs: true },
     { key: '?', handler: () => setShowShortcutsHelp((v) => !v), ignoreInputs: true },
     { key: 'z', ctrl: true, handler: () => handleUndo() },
     { key: 'z', ctrl: true, shift: true, handler: () => handleRedo() },
@@ -114,6 +117,19 @@ export default function DeckViewerClient({
   ], [slides.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useKeyboardShortcuts(shortcuts, !showPresent && !showThemeModal)
+
+  /* ─── First-visit shortcut hint ─── */
+  useEffect(() => {
+    try {
+      const key = 'slidex-shortcuts-hint-shown'
+      if (localStorage.getItem(key)) return
+      localStorage.setItem(key, '1')
+      const timer = setTimeout(() => {
+        toast('Press ? to see keyboard shortcuts', { duration: 4000 })
+      }, 2000)
+      return () => clearTimeout(timer)
+    } catch { /* localStorage unavailable */ }
+  }, [])
 
   /* ─── Generation Polling ─── */
   useEffect(() => {
@@ -508,6 +524,7 @@ export default function DeckViewerClient({
           deckTitle,
           (current, total) => setExportProgress({ current, total }),
           controller.signal,
+          { includeNotes: exportWithNotes },
         )
         toast.success('PDF downloaded!')
       } else {
@@ -646,6 +663,23 @@ export default function DeckViewerClient({
       {/* ── Keyboard Shortcuts Help ── */}
       {showShortcutsHelp && (
         <KeyboardShortcutsHelp onClose={() => setShowShortcutsHelp(false)} />
+      )}
+
+      {/* ── Jump to Slide Modal ── */}
+      {showJumpTo && (
+        <JumpToSlideModal
+          total={slides.length}
+          onJump={(num) => {
+            const target = slides[num - 1]
+            if (target) {
+              setActiveSlideId(target.id)
+              const el = slideRefs.current.get(target.id)
+              el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            }
+            setShowJumpTo(false)
+          }}
+          onClose={() => setShowJumpTo(false)}
+        />
       )}
 
       {/* ── Theme Modal ── */}
@@ -794,6 +828,8 @@ export default function DeckViewerClient({
             onExport={handleExport}
             onCancel={() => exportAbortRef.current?.abort()}
             disabled={slides.length === 0}
+            includeNotes={exportWithNotes}
+            onToggleNotes={() => setExportWithNotes((v) => !v)}
           />
 
           {/* Share */}
@@ -1041,6 +1077,48 @@ export default function DeckViewerClient({
   )
 }
 
+/* ─── Jump to Slide Modal ─── */
+function JumpToSlideModal({ total, onJump, onClose }: { total: number; onJump: (n: number) => void; onClose: () => void }) {
+  const [value, setValue] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => { inputRef.current?.focus() }, [])
+
+  function submit() {
+    const num = parseInt(value, 10)
+    if (num >= 1 && num <= total) onJump(num)
+  }
+
+  return (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm" onClick={onClose}>
+      <div className="w-full max-w-xs rounded-2xl bg-white p-5 shadow-2xl ring-1 ring-black/5" onClick={(e) => e.stopPropagation()}>
+        <p className="mb-3 text-sm font-semibold text-dark">Go to slide</p>
+        <div className="flex items-center gap-2">
+          <input
+            ref={inputRef}
+            type="number"
+            min={1}
+            max={total}
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') submit(); if (e.key === 'Escape') onClose() }}
+            placeholder={`1 – ${total}`}
+            className="w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm text-dark outline-none transition-colors focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/10"
+          />
+          <button
+            onClick={submit}
+            disabled={!value || parseInt(value, 10) < 1 || parseInt(value, 10) > total}
+            className="shrink-0 rounded-xl bg-brand-blue px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-brand-blue/20 transition-all hover:bg-brand-blue/90 disabled:opacity-50 disabled:shadow-none"
+          >
+            Go
+          </button>
+        </div>
+        <p className="mt-2 text-[11px] text-grey">Press Enter to jump, Esc to cancel</p>
+      </div>
+    </div>
+  )
+}
+
 /* ─── DraggableThumb: thumbnail with drag handle ─── */
 function DraggableThumb({
   slide,
@@ -1208,6 +1286,8 @@ function ExportDropdown({
   onExport,
   onCancel,
   disabled,
+  includeNotes,
+  onToggleNotes,
 }: {
   isExporting: boolean
   exportFormat: 'pdf' | 'pptx' | null
@@ -1217,6 +1297,8 @@ function ExportDropdown({
   onExport: (format: 'pdf' | 'pptx') => void
   onCancel: () => void
   disabled: boolean
+  includeNotes: boolean
+  onToggleNotes: () => void
 }) {
   const ref = useRef<HTMLDivElement>(null)
 
@@ -1295,6 +1377,16 @@ function ExportDropdown({
               <div className="text-[10px] text-grey">Editable PPTX file</div>
             </div>
           </button>
+          <div className="mx-2 border-t border-gray-100" />
+          <label className="flex cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2.5 text-xs font-medium text-mid transition-colors hover:bg-gray-50">
+            <input
+              type="checkbox"
+              checked={includeNotes}
+              onChange={onToggleNotes}
+              className="h-3.5 w-3.5 rounded border-gray-300 text-brand-blue accent-brand-blue"
+            />
+            Include speaker notes (PDF)
+          </label>
         </div>
       )}
     </div>

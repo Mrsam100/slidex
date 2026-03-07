@@ -15,8 +15,10 @@ import {
   Trash2,
   Search,
   X,
+  ArrowUpDown,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { AnimatePresence, motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import type { Slide, Theme } from '@/types/deck'
 import { THEMES } from '@/lib/themes'
@@ -43,6 +45,14 @@ interface DashboardClientProps {
 
 type FilterTab = 'all' | 'recent' | 'favorites'
 type ViewMode = 'grid' | 'list'
+type SortOption = 'newest' | 'oldest' | 'a-z' | 'z-a'
+
+const SORT_OPTIONS: { id: SortOption; label: string }[] = [
+  { id: 'newest', label: 'Newest first' },
+  { id: 'oldest', label: 'Oldest first' },
+  { id: 'a-z', label: 'A - Z' },
+  { id: 'z-a', label: 'Z - A' },
+]
 
 /* ─── Confirm Modal ─── */
 function ConfirmModal({
@@ -256,8 +266,11 @@ export default function DashboardClient({
   const [permanentDeleteId, setPermanentDeleteId] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [activeTab, setActiveTab] = useState<FilterTab>('all')
+  const [sortBy, setSortBy] = useState<SortOption>('newest')
+  const [showSortMenu, setShowSortMenu] = useState(false)
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
   const { searchOpen, openSearch, closeSearch } = useSearch()
+  const sortMenuRef = useRef<HTMLDivElement>(null)
 
   // Ref-based guard for delete operations to prevent double-fire
   const deletingRef = useRef(false)
@@ -265,6 +278,18 @@ export default function DashboardClient({
   const restoringRef = useRef<Set<string>>(new Set())
   // Ref-based guard for favorite toggle
   const togglingFavRef = useRef<Set<string>>(new Set())
+
+  // Close sort menu on outside click
+  useEffect(() => {
+    if (!showSortMenu) return
+    function handleClick(e: MouseEvent) {
+      if (sortMenuRef.current && !sortMenuRef.current.contains(e.target as Node)) {
+        setShowSortMenu(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [showSortMenu])
 
   // Load view mode preference
   useEffect(() => {
@@ -298,20 +323,39 @@ export default function DashboardClient({
     storeViewMode(mode)
   }
 
-  // Filter decks (memoized)
+  // Filter + sort decks (memoized)
   const filteredDecks = useMemo(() => {
-    if (isTrash) return decks
-    switch (activeTab) {
-      case 'favorites':
-        return decks.filter((d) => d.isFavorite)
-      case 'recent': {
-        const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000
-        return decks.filter((d) => new Date(d.createdAt).getTime() >= sevenDaysAgo)
+    let result = decks
+    if (!isTrash) {
+      switch (activeTab) {
+        case 'favorites':
+          result = decks.filter((d) => d.isFavorite)
+          break
+        case 'recent': {
+          const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000
+          result = decks.filter((d) => new Date(d.createdAt).getTime() >= sevenDaysAgo)
+          break
+        }
       }
-      default:
-        return decks
     }
-  }, [decks, activeTab, isTrash])
+    // Sort
+    const sorted = [...result]
+    switch (sortBy) {
+      case 'newest':
+        sorted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        break
+      case 'oldest':
+        sorted.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+        break
+      case 'a-z':
+        sorted.sort((a, b) => a.title.localeCompare(b.title))
+        break
+      case 'z-a':
+        sorted.sort((a, b) => b.title.localeCompare(a.title))
+        break
+    }
+    return sorted
+  }, [decks, activeTab, isTrash, sortBy])
 
   /* ─── CRUD handlers ─── */
   const handleDelete = useCallback(
@@ -319,19 +363,46 @@ export default function DashboardClient({
       if (deletingRef.current) return
       deletingRef.current = true
       setIsDeleting(true)
+
+      // Optimistic removal — stash the deck for undo
+      const removedDeck = decks.find((d) => d.id === id)
+      setDecks((prev) => prev.filter((d) => d.id !== id))
+      setDeleteId(null)
+      setIsDeleting(false)
+      deletingRef.current = false
+
       try {
         const res = await fetch(`/api/decks/${id}`, { method: 'DELETE' })
         if (!res.ok) throw new Error()
-        setDecks((prev) => prev.filter((d) => d.id !== id))
-        toast.success('Deck moved to trash')
+        toast.success('Deck moved to trash', {
+          action: removedDeck
+            ? {
+                label: 'Undo',
+                onClick: async () => {
+                  try {
+                    const restoreRes = await fetch(`/api/decks/${id}`, {
+                      method: 'PATCH',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ restore: true }),
+                    })
+                    if (!restoreRes.ok) throw new Error()
+                    setDecks((prev) => [removedDeck, ...prev])
+                    toast.success('Deck restored')
+                  } catch {
+                    toast.error('Failed to undo. Check trash to restore.')
+                  }
+                },
+              }
+            : undefined,
+          duration: 5000,
+        })
       } catch {
+        // Rollback optimistic removal
+        if (removedDeck) setDecks((prev) => [removedDeck, ...prev])
         toast.error('Failed to delete deck')
       }
-      deletingRef.current = false
-      setIsDeleting(false)
-      setDeleteId(null)
     },
-    [],
+    [decks],
   )
 
   const handlePermanentDelete = useCallback(
@@ -534,7 +605,37 @@ export default function DashboardClient({
             })}
           </div>
 
-          {/* View mode toggle */}
+          {/* Sort + View mode toggle */}
+          <div className="flex items-center gap-2">
+          {/* Sort dropdown */}
+          <div ref={sortMenuRef} className="relative">
+            <button
+              onClick={() => setShowSortMenu((v) => !v)}
+              className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-mid transition-colors hover:bg-gray-50"
+              aria-label="Sort decks"
+            >
+              <ArrowUpDown className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">{SORT_OPTIONS.find((o) => o.id === sortBy)?.label}</span>
+            </button>
+            {showSortMenu && (
+              <div className="absolute right-0 top-full z-20 mt-1 w-40 overflow-hidden rounded-xl border border-gray-100 bg-white py-1 shadow-xl">
+                {SORT_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.id}
+                    onClick={() => { setSortBy(opt.id); setShowSortMenu(false) }}
+                    className={cn(
+                      'flex w-full items-center px-3 py-2 text-xs font-medium transition-colors',
+                      sortBy === opt.id
+                        ? 'bg-brand-blue/10 text-brand-blue'
+                        : 'text-mid hover:bg-gray-50',
+                    )}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <div className="flex items-center rounded-lg border border-gray-200 bg-white p-0.5">
             <button
               onClick={() => toggleViewMode('grid')}
@@ -560,6 +661,7 @@ export default function DashboardClient({
             >
               <List className="h-4 w-4" />
             </button>
+          </div>
           </div>
         </div>
       )}
@@ -606,15 +708,37 @@ export default function DashboardClient({
         </div>
       ) : viewMode === 'grid' || isTrash ? (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filteredDecks.map((deck) => (
-            <DeckCard key={deck.id} {...deckItemProps(deck)} />
-          ))}
+          <AnimatePresence mode="popLayout">
+            {filteredDecks.map((deck) => (
+              <motion.div
+                key={deck.id}
+                layout
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.2 }}
+              >
+                <DeckCard {...deckItemProps(deck)} />
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
       ) : (
         <div className="flex flex-col gap-2">
-          {filteredDecks.map((deck) => (
-            <DeckListItem key={deck.id} {...deckItemProps(deck)} />
-          ))}
+          <AnimatePresence mode="popLayout">
+            {filteredDecks.map((deck) => (
+              <motion.div
+                key={deck.id}
+                layout
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 8 }}
+                transition={{ duration: 0.2 }}
+              >
+                <DeckListItem {...deckItemProps(deck)} />
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
       )}
     </>

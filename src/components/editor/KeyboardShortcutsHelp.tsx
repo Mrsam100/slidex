@@ -6,12 +6,22 @@ interface Props {
   onClose: () => void
 }
 
-const SHORTCUTS = [
+const EDITOR_SHORTCUTS = [
   { keys: ['F'], label: 'Enter presentation mode' },
-  { keys: ['Esc'], label: 'Exit presentation / close modal' },
+  { keys: ['G'], label: 'Go to slide number' },
   { keys: ['Ctrl', 'Z'], label: 'Undo last edit' },
   { keys: ['Ctrl', 'Shift', 'Z'], label: 'Redo last edit' },
   { keys: ['?'], label: 'Show keyboard shortcuts' },
+  { keys: ['Esc'], label: 'Close modal / exit' },
+] as const
+
+const PRESENT_SHORTCUTS = [
+  { keys: ['\u2190', '\u2192'], label: 'Navigate slides' },
+  { keys: ['Space'], label: 'Next slide' },
+  { keys: ['N'], label: 'Toggle speaker notes' },
+  { keys: ['T'], label: 'Toggle timer' },
+  { keys: ['B'], label: 'Blank screen (pause)' },
+  { keys: ['Esc'], label: 'Exit presentation' },
 ] as const
 
 export default function KeyboardShortcutsHelp({ onClose }: Props) {
@@ -33,22 +43,47 @@ export default function KeyboardShortcutsHelp({ onClose }: Props) {
             <X className="h-4 w-4" />
           </button>
         </div>
-        <div className="mt-4 space-y-2.5">
-          {SHORTCUTS.map((s) => (
-            <div key={s.label} className="flex items-center justify-between">
-              <span className="text-sm text-mid">{s.label}</span>
-              <div className="flex items-center gap-1">
-                {s.keys.map((k) => (
-                  <kbd
-                    key={k}
-                    className="rounded-md border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs font-medium text-mid"
-                  >
-                    {k}
-                  </kbd>
-                ))}
-              </div>
+        <div className="mt-4 space-y-4">
+          <div>
+            <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-grey">Editor</p>
+            <div className="space-y-2">
+              {EDITOR_SHORTCUTS.map((s) => (
+                <div key={s.label} className="flex items-center justify-between">
+                  <span className="text-sm text-mid">{s.label}</span>
+                  <div className="flex items-center gap-1">
+                    {s.keys.map((k) => (
+                      <kbd
+                        key={k}
+                        className="rounded-md border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs font-medium text-mid"
+                      >
+                        {k}
+                      </kbd>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
+          <div className="border-t border-gray-100 pt-3">
+            <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-grey">Presentation</p>
+            <div className="space-y-2">
+              {PRESENT_SHORTCUTS.map((s) => (
+                <div key={s.label} className="flex items-center justify-between">
+                  <span className="text-sm text-mid">{s.label}</span>
+                  <div className="flex items-center gap-1">
+                    {s.keys.map((k) => (
+                      <kbd
+                        key={k}
+                        className="rounded-md border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs font-medium text-mid"
+                      >
+                        {k}
+                      </kbd>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>

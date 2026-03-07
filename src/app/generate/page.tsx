@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { Reorder } from 'framer-motion'
 import type { OutlineItem, SlideLayout } from '@/types/deck'
 import ThemePicker from '@/components/slides/ThemePicker'
 
@@ -292,6 +293,10 @@ export default function GeneratePage() {
     set({ outline: [...state.outline, next] })
   }
 
+  function handleOutlineReorder(newOrder: OutlineItem[]) {
+    set({ outline: newOrder.map((item, i) => ({ ...item, position: i + 1 })) })
+  }
+
   const canGenerate = state.topic.trim().length >= 3
   const hasOutline = state.outline.length > 0
 
@@ -427,38 +432,22 @@ export default function GeneratePage() {
             <h3 className="mb-3 text-sm font-semibold text-dark">Outline</h3>
 
             <div className="overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-sm ring-1 ring-black/[0.03]">
-              <div className="divide-y divide-gray-100">
+              <Reorder.Group
+                axis="y"
+                values={state.outline}
+                onReorder={handleOutlineReorder}
+                className="divide-y divide-gray-100"
+              >
                 {state.outline.map((item) => (
-                  <div
+                  <OutlineReorderItem
                     key={item.position}
-                    className="group flex items-start gap-3 px-5 py-4 transition-colors hover:bg-gray-50/50"
-                  >
-                    <GripVertical className="mt-1.5 h-4 w-4 shrink-0 cursor-grab text-grey/30 transition-colors group-hover:text-grey/60" />
-                    <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand-blue/8 text-xs font-bold tabular-nums text-brand-blue">
-                      {item.position}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <input
-                        type="text"
-                        value={item.title}
-                        onChange={(e) =>
-                          updateOutlineTitle(item.position, e.target.value)
-                        }
-                        className="w-full border-none bg-transparent text-sm font-semibold text-dark outline-none"
-                      />
-                      <span className="mt-0.5 inline-block rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-grey">
-                        {LAYOUT_LABELS[item.type]}
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => removeOutlineItem(item.position)}
-                      className="shrink-0 rounded-lg p-1 text-grey/0 transition-all group-hover:text-grey/40 hover:!bg-red-50 hover:!text-error"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
+                    item={item}
+                    onTitleChange={(title) => updateOutlineTitle(item.position, title)}
+                    onRemove={() => removeOutlineItem(item.position)}
+                    canRemove={state.outline.length > 1}
+                  />
                 ))}
-              </div>
+              </Reorder.Group>
 
               {/* Add card */}
               <button
@@ -486,11 +475,11 @@ export default function GeneratePage() {
                 <div className="mb-4 flex items-center gap-2">
                   <AlignLeft className="h-4 w-4 text-brand-blue" />
                   <h4 className="text-sm font-semibold text-dark">
-                    Text content
+                    Content density
                   </h4>
                 </div>
                 <p className="mb-3 text-xs text-grey">
-                  Amount of text per card
+                  Controls tone and amount of text per slide
                 </p>
                 <ContentLevelPicker
                   value={state.tone}
@@ -515,7 +504,7 @@ export default function GeneratePage() {
         )}
       </main>
 
-      {/* ── Sticky Bottom Bar (like Gamma) ── */}
+      {/* ── Sticky Bottom Bar (like Gamma — always visible when outline exists) ── */}
       {hasOutline && (
         <div className="fixed inset-x-0 bottom-0 z-30 border-t border-gray-200/60 bg-white/95 shadow-[0_-2px_10px_rgba(0,0,0,0.04)] backdrop-blur-sm">
           <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3.5 sm:px-6">
@@ -543,5 +532,50 @@ export default function GeneratePage() {
         </div>
       )}
     </div>
+  )
+}
+
+/* ─── Outline Reorder Item ─── */
+function OutlineReorderItem({
+  item,
+  onTitleChange,
+  onRemove,
+  canRemove,
+}: {
+  item: OutlineItem
+  onTitleChange: (title: string) => void
+  onRemove: () => void
+  canRemove: boolean
+}) {
+  return (
+    <Reorder.Item
+      value={item}
+      className="group flex items-start gap-3 bg-white px-5 py-4 transition-colors hover:bg-gray-50/50"
+      whileDrag={{ scale: 1.02, boxShadow: '0 4px 20px rgba(0,0,0,0.1)', zIndex: 10 }}
+    >
+      <GripVertical className="mt-1.5 h-4 w-4 shrink-0 cursor-grab text-grey/30 transition-colors active:cursor-grabbing group-hover:text-grey/60" />
+      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand-blue/8 text-xs font-bold tabular-nums text-brand-blue">
+        {item.position}
+      </span>
+      <div className="min-w-0 flex-1">
+        <input
+          type="text"
+          value={item.title}
+          onChange={(e) => onTitleChange(e.target.value)}
+          className="w-full border-none bg-transparent text-sm font-semibold text-dark outline-none"
+        />
+        <span className="mt-0.5 inline-block rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-grey">
+          {LAYOUT_LABELS[item.type]}
+        </span>
+      </div>
+      {canRemove && (
+        <button
+          onClick={onRemove}
+          className="shrink-0 rounded-lg p-1 text-grey/0 transition-all group-hover:text-grey/40 hover:!bg-red-50 hover:!text-error"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      )}
+    </Reorder.Item>
   )
 }
