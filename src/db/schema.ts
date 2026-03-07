@@ -136,6 +136,8 @@ export const slides = pgTable(
     speakerNotes: text('speaker_notes'),
     imagePrompt: text('image_prompt'),
     imageUrl: text('image_url'),
+    bgImageUrl: text('bg_image_url'),
+    sectionTag: text('section_tag'),
     chartData: json('chart_data'),
     createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
   },

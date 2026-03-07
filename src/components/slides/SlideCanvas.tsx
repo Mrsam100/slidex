@@ -40,6 +40,12 @@ function toArray(val: unknown): string[] {
 export default memo(function SlideCanvas({ slide, theme, isThumb, animate }: SlideCanvasProps) {
   const t = isThumb
   const isFun = !!theme.emojiSet
+  const hasBgImage = !!slide.bgImageUrl
+
+  // When a bg image is present, force white text for readability
+  const effectiveHeadlineColor = hasBgImage ? '#FFFFFF' : theme.headlineColor
+  const effectiveTextColor = hasBgImage ? 'rgba(255,255,255,0.85)' : theme.textColor
+  const effectiveAccentColor = hasBgImage ? '#FFFFFF' : theme.accentColor
 
   // Staggered animation helper — returns inline style for nth element
   const anim = (index: number): React.CSSProperties =>
@@ -50,6 +56,20 @@ export default memo(function SlideCanvas({ slide, theme, isThumb, animate }: Sli
           animation: `slidecanvas-enter 0.45s ease-out ${index * 0.12}s forwards`,
         }
       : {}
+
+  // Section tag pill (e.g. "SESSION OVERVIEW", "FOUNDATION")
+  const sectionTag = slide.sectionTag && !t ? (
+    <span
+      className="mb-4 inline-block rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-widest"
+      style={{
+        borderColor: hasBgImage ? 'rgba(255,255,255,0.4)' : theme.accentColor,
+        color: hasBgImage ? 'rgba(255,255,255,0.9)' : theme.accentColor,
+        ...anim(0),
+      }}
+    >
+      {slide.sectionTag}
+    </span>
+  ) : null
 
   // Deterministic emoji positions based on slide position
   const emojiPositions = isFun && theme.emojiSet ? getEmojiPositions(slide.position, theme.emojiSet) : []
@@ -65,6 +85,20 @@ export default memo(function SlideCanvas({ slide, theme, isThumb, animate }: Sli
         borderRadius: theme.borderRadius,
       }}
     >
+      {/* Full-bleed background image (templates, hero slides) */}
+      {slide.bgImageUrl && (
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={slide.bgImageUrl}
+            alt=""
+            className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+          />
+          {/* Dark overlay for text readability */}
+          <div className="pointer-events-none absolute inset-0 bg-black/50" />
+        </>
+      )}
+
       {/* Mesh gradient overlay for gradient themes (non-fun) */}
       {theme.bgGradient && !isFun && !t && (
         <>
@@ -137,49 +171,51 @@ export default memo(function SlideCanvas({ slide, theme, isThumb, animate }: Sli
         <div
           className={`relative flex h-full flex-col items-center justify-center text-center ${t ? 'p-4' : 'px-24 py-16'}`}
         >
-          {/* Decorative accent line above headline */}
-          {!t && (
+          {sectionTag}
+          {/* Decorative accent line above headline (skip when bg image or section tag) */}
+          {!t && !hasBgImage && !slide.sectionTag && (
             <div
               className="mb-8 h-1 w-16 rounded-full"
-              style={{ backgroundColor: theme.accentColor, ...anim(0) }}
+              style={{ backgroundColor: effectiveAccentColor, ...anim(0) }}
             />
           )}
           <h1
             className={`font-bold tracking-tight ${t ? 'text-lg leading-tight' : 'text-[3.5rem] leading-[1.15]'}`}
-            style={{ color: theme.headlineColor, ...anim(1) }}
+            style={{ color: effectiveHeadlineColor, ...anim(1) }}
           >
             {slide.headline}
           </h1>
           {slide.body && (
             <p
               className={`max-w-2xl leading-relaxed ${t ? 'mt-2 text-xs opacity-70' : 'mt-8 text-xl opacity-65'}`}
-              style={anim(2)}
+              style={{ color: effectiveTextColor, ...anim(2) }}
             >
               {renderInlineMarkdown(slide.body!)}
             </p>
           )}
           {/* Bottom accent bar */}
-          {!t && (
+          {!t && !hasBgImage && (
             <div
               className="absolute bottom-16 h-1 w-32 rounded-full"
-              style={{ backgroundColor: theme.accentColor, opacity: 0.4, ...anim(3) }}
+              style={{ backgroundColor: effectiveAccentColor, opacity: 0.4, ...anim(3) }}
             />
           )}
         </div>
       )}
 
       {slide.layout === 'bullets' && (
-        <div className={`flex h-full flex-col ${t ? 'p-4' : 'p-16 pr-20'}`}>
+        <div className={`flex h-full flex-col ${t ? 'p-4' : 'p-16 pr-20'}`} style={hasBgImage ? { color: effectiveTextColor } : undefined}>
           {/* Accent sidebar stripe */}
-          {!isFun && !t && (
+          {!isFun && !t && !hasBgImage && (
             <div
               className="absolute bottom-16 left-16 top-16 w-1 rounded-full"
-              style={{ backgroundColor: theme.accentColor, opacity: 0.2 }}
+              style={{ backgroundColor: effectiveAccentColor, opacity: 0.2 }}
             />
           )}
+          {sectionTag}
           <h2
             className={`font-bold tracking-tight ${t ? 'text-lg' : 'pl-6 text-[2.75rem] leading-[1.2]'}`}
-            style={{ color: theme.headlineColor, ...anim(0) }}
+            style={{ color: effectiveHeadlineColor, ...anim(0) }}
           >
             {slide.headline}
           </h2>
@@ -197,7 +233,7 @@ export default memo(function SlideCanvas({ slide, theme, isThumb, animate }: Sli
                 ) : (
                   <span
                     className={`shrink-0 rounded-sm ${t ? 'mt-1 h-2 w-2' : 'mt-2 h-3 w-3'}`}
-                    style={{ backgroundColor: theme.accentColor }}
+                    style={{ backgroundColor: effectiveAccentColor }}
                   />
                 )}
                 <span className={t ? 'text-xs' : 'text-xl leading-relaxed'}>{renderInlineMarkdown(bullet)}</span>
@@ -208,10 +244,11 @@ export default memo(function SlideCanvas({ slide, theme, isThumb, animate }: Sli
       )}
 
       {slide.layout === 'two-column' && (
-        <div className={`flex h-full flex-col ${t ? 'p-4' : 'p-16'}`}>
+        <div className={`flex h-full flex-col ${t ? 'p-4' : 'p-16'}`} style={hasBgImage ? { color: effectiveTextColor } : undefined}>
+          {sectionTag}
           <h2
             className={`font-bold tracking-tight ${t ? 'text-lg' : 'text-[2.75rem] leading-[1.2]'}`}
-            style={{ color: theme.headlineColor, ...anim(0) }}
+            style={{ color: effectiveHeadlineColor, ...anim(0) }}
           >
             {slide.headline}
           </h2>
@@ -274,17 +311,19 @@ export default memo(function SlideCanvas({ slide, theme, isThumb, animate }: Sli
       {slide.layout === 'quote' && (
         <div
           className={`relative flex h-full flex-col items-center justify-center text-center ${t ? 'p-4' : 'p-20'}`}
+          style={hasBgImage ? { color: effectiveTextColor } : undefined}
         >
+          {sectionTag}
           {/* Large decorative quote mark */}
           <div
             className={`font-serif leading-none ${t ? 'text-3xl' : 'text-[120px]'}`}
-            style={{ color: theme.accentColor, opacity: 0.15, ...anim(0) }}
+            style={{ color: effectiveAccentColor, opacity: hasBgImage ? 0.4 : 0.15, ...anim(0) }}
           >
             &ldquo;
           </div>
           <blockquote
             className={`max-w-3xl font-medium italic leading-relaxed ${t ? '-mt-2 text-sm' : '-mt-8 text-[1.75rem]'}`}
-            style={{ color: theme.headlineColor, ...anim(1) }}
+            style={{ color: effectiveHeadlineColor, ...anim(1) }}
           >
             {renderInlineMarkdown(slide.quote!)}
           </blockquote>
@@ -313,13 +352,14 @@ export default memo(function SlideCanvas({ slide, theme, isThumb, animate }: Sli
       )}
 
       {slide.layout === 'image-text' && (
-        <div className="flex h-full">
+        <div className="flex h-full" style={hasBgImage ? { color: effectiveTextColor } : undefined}>
           <div
             className={`flex w-[55%] flex-col justify-center ${t ? 'p-4' : 'p-16 pr-12'}`}
           >
+            {sectionTag}
             <h2
               className={`font-bold tracking-tight ${t ? 'text-lg' : 'text-[2.75rem] leading-[1.2]'}`}
-              style={{ color: theme.headlineColor, ...anim(0) }}
+              style={{ color: effectiveHeadlineColor, ...anim(0) }}
             >
               {slide.headline}
             </h2>
@@ -382,10 +422,11 @@ export default memo(function SlideCanvas({ slide, theme, isThumb, animate }: Sli
       )}
 
       {slide.layout === 'chart' && (
-        <div className={`flex h-full flex-col ${t ? 'p-4' : 'p-12'}`}>
+        <div className={`flex h-full flex-col ${t ? 'p-4' : 'p-12'}`} style={hasBgImage ? { color: effectiveTextColor } : undefined}>
+          {sectionTag}
           <h2
             className={`font-bold tracking-tight ${t ? 'text-base' : 'text-[2.5rem] leading-[1.2]'}`}
-            style={{ color: theme.headlineColor, ...anim(0) }}
+            style={{ color: effectiveHeadlineColor, ...anim(0) }}
           >
             {slide.headline}
           </h2>
@@ -442,6 +483,7 @@ export default memo(function SlideCanvas({ slide, theme, isThumb, animate }: Sli
       {/* Slide number — fun theme gets emoji */}
       <span
         className={`absolute font-medium ${t ? 'bottom-1 right-2 text-[8px] opacity-30' : 'bottom-5 right-7 text-[11px] opacity-30'}`}
+        style={hasBgImage ? { color: '#FFFFFF' } : undefined}
       >
         {isFun ? `✨ ${slide.position}` : slide.position}
       </span>

@@ -34,6 +34,8 @@ export interface Slide {
   speakerNotes?: string
   imagePrompt?: string
   imageUrl?: string
+  bgImageUrl?: string
+  sectionTag?: string
   chartData?: ChartData
   createdAt: Date
 }

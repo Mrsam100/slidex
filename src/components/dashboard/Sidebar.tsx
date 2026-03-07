@@ -95,7 +95,7 @@ export default function Sidebar({ user }: SidebarProps) {
 
   const secondaryNav: NavItem[] = [
     { href: '#', label: 'Shared with me', icon: Share2, disabled: true, badge: 'Soon' },
-    { href: '#', label: 'Templates', icon: LayoutTemplate, disabled: true, badge: 'Soon' },
+    { href: '/templates', label: 'Templates', icon: LayoutTemplate },
     { href: '/settings', label: 'Settings', icon: Settings },
   ]
 

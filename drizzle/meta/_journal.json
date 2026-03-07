@@ -50,6 +50,13 @@
       "when": 1772874632498,
       "tag": "0006_talented_zuras",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1772894195442,
+      "tag": "0007_cute_centennial",
+      "breakpoints": true
     }
   ]
 }
