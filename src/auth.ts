@@ -50,7 +50,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     }),
   ],
-  session: { strategy: 'jwt' },
+  session: { strategy: 'jwt', maxAge: 30 * 24 * 60 * 60 },
   pages: {
     signIn: '/signin',
     error: '/signin',
@@ -75,6 +75,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
       if (isProtected && !session?.user) {
         return false
+      }
+
+      // Redirect authenticated users from landing/signin/signup to dashboard
+      const publicOnlyRoutes = ['/', '/signin', '/signup']
+      if (session?.user && publicOnlyRoutes.includes(pathname)) {
+        return Response.redirect(new URL('/dashboard', request.url))
       }
 
       return true

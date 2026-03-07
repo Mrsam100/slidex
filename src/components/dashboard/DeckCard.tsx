@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { MoreHorizontal, Pencil, Copy, Trash2, Star, RotateCcw, XCircle } from 'lucide-react'
+import { MoreHorizontal, Pencil, Copy, Trash2, Star, RotateCcw, XCircle, Loader2, AlertTriangle } from 'lucide-react'
 import { cn, timeAgo } from '@/lib/utils'
 import type { Slide, Theme } from '@/types/deck'
 import SlideCanvas from '@/components/slides/SlideCanvas'
@@ -127,13 +127,23 @@ export default function DeckCard({
 
           {/* Status badges */}
           {deck.status === 'generating' && (
-            <span className="absolute left-2 top-2 animate-pulse rounded-full bg-brand-teal/90 px-2.5 py-1 text-[10px] font-medium text-white shadow-sm">
-              Generating...
-            </span>
+            <>
+              <div className="absolute inset-0 bg-black/10 backdrop-blur-[1px]" />
+              <span className="absolute left-2 top-2 flex items-center gap-1.5 rounded-full bg-brand-teal/90 px-2.5 py-1 text-[10px] font-medium text-white shadow-sm">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Generating...
+              </span>
+            </>
           )}
           {deck.status === 'error' && (
-            <span className="absolute left-2 top-2 rounded-full bg-error/90 px-2.5 py-1 text-[10px] font-medium text-white shadow-sm">
+            <span className="absolute left-2 top-2 flex items-center gap-1.5 rounded-full bg-error/90 px-2.5 py-1 text-[10px] font-medium text-white shadow-sm">
+              <AlertTriangle className="h-3 w-3" />
               Error
+            </span>
+          )}
+          {deck.status === 'draft' && (
+            <span className="absolute left-2 top-2 rounded-full bg-gray-500/80 px-2.5 py-1 text-[10px] font-medium text-white shadow-sm">
+              Draft
             </span>
           )}
 
@@ -156,7 +166,7 @@ export default function DeckCard({
                 'absolute right-2 top-2 rounded-full p-1.5 transition-all',
                 deck.isFavorite
                   ? 'bg-yellow-400/90 text-white shadow-sm'
-                  : 'bg-black/30 text-white/70 opacity-0 backdrop-blur-sm hover:bg-black/50 hover:text-white focus:opacity-100 group-hover:opacity-100',
+                  : 'bg-black/30 text-white/70 backdrop-blur-sm hover:bg-black/50 hover:text-white md:opacity-0 md:focus:opacity-100 md:group-hover:opacity-100',
               )}
             >
               <Star
@@ -209,7 +219,7 @@ export default function DeckCard({
               }}
               className={cn(
                 'rounded-lg p-1.5 text-grey transition-all hover:bg-gray-100',
-                menuOpen ? 'opacity-100' : 'opacity-0 focus:opacity-100 group-hover:opacity-100',
+                menuOpen ? 'opacity-100' : 'md:opacity-0 md:focus:opacity-100 md:group-hover:opacity-100',
               )}
             >
               <MoreHorizontal className="h-4 w-4" />

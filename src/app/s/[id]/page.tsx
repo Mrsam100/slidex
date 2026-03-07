@@ -51,14 +51,53 @@ export default async function SharedDeckPage({ params }: Props) {
   const { id } = await params
   const deck = await getDeck(id)
 
-  // Show private message if deck doesn't exist, isn't public, or still generating
-  if (!deck || !deck.isPublic || deck.status !== 'done') {
+  // Determine the right message based on state
+  if (!deck || !deck.isPublic) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-[#0A0A0A] p-4">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-white">This deck is private</h1>
           <p className="mt-2 text-white/50">
             The owner has not shared this presentation publicly.
+          </p>
+          <Link
+            href="/"
+            className="mt-6 inline-block rounded-lg bg-brand-blue px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-blue/90"
+          >
+            Create your own deck
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  if (deck.status === 'generating') {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-[#0A0A0A] p-4">
+        <div className="text-center">
+          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-brand-teal border-t-transparent" />
+          <h1 className="text-2xl font-bold text-white">This deck is still being created</h1>
+          <p className="mt-2 text-white/50">
+            The AI is generating slides right now. Check back in a minute.
+          </p>
+          <Link
+            href="/"
+            className="mt-6 inline-block rounded-lg bg-brand-blue px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-blue/90"
+          >
+            Create your own deck
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  if (deck.status === 'error' || deck.status === 'draft') {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-[#0A0A0A] p-4">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-white">This deck isn&apos;t ready yet</h1>
+          <p className="mt-2 text-white/50">
+            The owner is still working on this presentation.
           </p>
           <Link
             href="/"

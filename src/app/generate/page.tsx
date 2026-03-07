@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
@@ -73,12 +73,14 @@ function OptionDropdown<T extends string | number>({
   onChange,
   display,
   icon,
+  label,
 }: {
   value: T
   options: T[]
   onChange: (v: T) => void
   display: (v: T) => string
   icon?: React.ReactNode
+  label?: string
 }) {
   return (
     <div className="relative">
@@ -88,6 +90,7 @@ function OptionDropdown<T extends string | number>({
           value={String(value)}
           onChange={(e) => onChange(e.target.value as T)}
           className="appearance-none bg-transparent pr-4 outline-none"
+          aria-label={label}
         >
           {options.map((opt) => (
             <option key={String(opt)} value={String(opt)}>
@@ -165,6 +168,13 @@ export default function GeneratePage() {
     [],
   )
 
+  // Auto-focus topic input on mount
+  useEffect(() => {
+    // Small delay to ensure page transition is complete
+    const timer = setTimeout(() => inputRef.current?.focus(), 100)
+    return () => clearTimeout(timer)
+  }, [])
+
   /* ─── API: Generate outline ─── */
   async function handleGenerateOutline() {
     if (state.isLoadingOutline || state.topic.trim().length < 3) return
@@ -186,11 +196,17 @@ export default function GeneratePage() {
           return
         }
         if (res.status === 429) {
-          toast.error('Too many concurrent generations. Please wait and try again.')
+          toast.error('You have 3 decks generating at once. Wait for one to finish, then try again.')
+          return
+        }
+        if (res.status === 403) {
+          toast.error('You\'ve reached your free plan limit (5 decks/month). Upgrade to Pro for unlimited.')
           return
         }
         const data = await res.json().catch(() => ({}))
-        toast.error(data.error || 'Something went wrong. Please try again.')
+        toast.error(data.error === 'limit_reached'
+          ? 'Free plan limit reached — upgrade to Pro for unlimited decks.'
+          : data.error || 'AI service is temporarily unavailable. Please try again in a moment.')
         return
       }
       const data = await res.json()
@@ -200,7 +216,7 @@ export default function GeneratePage() {
         phase: 'outline',
       })
     } catch {
-      toast.error('Something went wrong. Please try again.')
+      toast.error('Network error — check your connection and try again.')
     } finally {
       set({ isLoadingOutline: false })
     }
@@ -235,11 +251,11 @@ export default function GeneratePage() {
           return
         }
         if (res.status === 429) {
-          toast.error('Too many concurrent generations. Please wait and try again.')
+          toast.error('You have 3 decks generating at once. Wait for one to finish, then try again.')
           setIsGeneratingSlides(false)
           return
         }
-        toast.error(data.error || 'Failed to start generation. Please try again.')
+        toast.error(data.error || 'AI service is temporarily unavailable. Please try again in a moment.')
         setIsGeneratingSlides(false)
         return
       }
@@ -306,18 +322,21 @@ export default function GeneratePage() {
             options={SLIDE_COUNTS}
             onChange={(v) => set({ slideCount: Number(v) as 5 | 8 | 10 | 15 })}
             display={(v) => `${v} cards`}
+            label="Number of slides"
           />
           <OptionDropdown
             value={state.tone}
             options={[...TONES]}
             onChange={(v) => set({ tone: v })}
             display={(v) => v.charAt(0).toUpperCase() + v.slice(1)}
+            label="Tone"
           />
           <OptionDropdown
             value={state.audience}
             options={[...AUDIENCES]}
             onChange={(v) => set({ audience: v })}
             display={(v) => v.charAt(0).toUpperCase() + v.slice(1)}
+            label="Audience"
           />
         </div>
 
