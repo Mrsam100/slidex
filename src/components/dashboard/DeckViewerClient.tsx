@@ -25,6 +25,8 @@ import {
   Columns2,
   Quote,
   ImageIcon,
+  FileText,
+  ChevronRight,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { Slide, SlideLayout, Theme, DeckStatus } from '@/types/deck'
@@ -56,7 +58,9 @@ export default function DeckViewerClient({
   const [pendingThemeId, setPendingThemeId] = useState(deck.theme)
   const [isSavingTheme, setIsSavingTheme] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
+  const [exportFormat, setExportFormat] = useState<'pdf' | 'pptx' | null>(null)
   const [exportProgress, setExportProgress] = useState<{ current: number; total: number } | null>(null)
+  const [showExportMenu, setShowExportMenu] = useState(false)
   const [isPublic, setIsPublic] = useState(deck.isPublic)
   const [isTogglingShare, setIsTogglingShare] = useState(false)
   const [deckTitle, setDeckTitle] = useState(deck.title)
@@ -314,29 +318,43 @@ export default function DeckViewerClient({
     }
   }
 
-  /* ─── PDF export ─── */
-  async function handleExportPDF() {
+  /* ─── Export (PDF or PPTX) ─── */
+  async function handleExport(format: 'pdf' | 'pptx') {
     if (isExporting) return
     setIsExporting(true)
+    setExportFormat(format)
     setExportProgress(null)
+    setShowExportMenu(false)
     const controller = new AbortController()
     exportAbortRef.current = controller
     try {
-      const { exportDeckToPDF } = await import('@/lib/pdf')
-      await exportDeckToPDF(
-        slides,
-        activeTheme,
-        deckTitle,
-        (current, total) => setExportProgress({ current, total }),
-        controller.signal,
-      )
-      toast.success('PDF downloaded!')
+      if (format === 'pdf') {
+        const { exportDeckToPDF } = await import('@/lib/pdf')
+        await exportDeckToPDF(
+          slides,
+          activeTheme,
+          deckTitle,
+          (current, total) => setExportProgress({ current, total }),
+          controller.signal,
+        )
+        toast.success('PDF downloaded!')
+      } else {
+        const { exportDeckToPPTX } = await import('@/lib/pptx')
+        await exportDeckToPPTX(
+          slides,
+          activeTheme,
+          deckTitle,
+          (current, total) => setExportProgress({ current, total }),
+        )
+        toast.success('PPTX downloaded!')
+      }
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') return
       toast.error('Export failed. Try again.')
     } finally {
       exportAbortRef.current = null
       setIsExporting(false)
+      setExportFormat(null)
       setExportProgress(null)
     }
   }
@@ -502,23 +520,15 @@ export default function DeckViewerClient({
             <Palette className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Theme</span>
           </button>
-          <button
-            onClick={handleExportPDF}
-            disabled={isExporting || slides.length === 0}
-            className="flex items-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium text-mid transition-colors hover:bg-gray-100 hover:text-dark disabled:opacity-50 sm:px-3"
-          >
-            {isExporting ? (
-              <>
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                <span className="tabular-nums">{exportProgress ? `${exportProgress.current}/${exportProgress.total}` : '...'}</span>
-              </>
-            ) : (
-              <>
-                <FileDown className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Export</span>
-              </>
-            )}
-          </button>
+          <ExportDropdown
+            isExporting={isExporting}
+            exportFormat={exportFormat}
+            exportProgress={exportProgress}
+            showMenu={showExportMenu}
+            setShowMenu={setShowExportMenu}
+            onExport={handleExport}
+            disabled={slides.length === 0}
+          />
 
           {/* Share */}
           {isPublic ? (
@@ -837,6 +847,90 @@ function LayoutDropdown({
               {opt.label}
             </button>
           ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ─── ExportDropdown: PDF or PPTX ─── */
+function ExportDropdown({
+  isExporting,
+  exportFormat,
+  exportProgress,
+  showMenu,
+  setShowMenu,
+  onExport,
+  disabled,
+}: {
+  isExporting: boolean
+  exportFormat: 'pdf' | 'pptx' | null
+  exportProgress: { current: number; total: number } | null
+  showMenu: boolean
+  setShowMenu: (v: boolean) => void
+  onExport: (format: 'pdf' | 'pptx') => void
+  disabled: boolean
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!showMenu) return
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setShowMenu(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [showMenu, setShowMenu])
+
+  if (isExporting) {
+    return (
+      <button
+        disabled
+        className="flex items-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium text-mid sm:px-3"
+      >
+        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+        <span className="tabular-nums">
+          {exportProgress
+            ? `${exportFormat === 'pptx' ? 'PPTX' : 'PDF'} ${exportProgress.current}/${exportProgress.total}`
+            : `${exportFormat === 'pptx' ? 'PPTX' : 'PDF'}...`}
+        </span>
+      </button>
+    )
+  }
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setShowMenu(!showMenu)}
+        disabled={disabled}
+        className="flex items-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium text-mid transition-colors hover:bg-gray-100 hover:text-dark disabled:opacity-50 sm:px-3"
+      >
+        <FileDown className="h-3.5 w-3.5" />
+        <span className="hidden sm:inline">Export</span>
+        <ChevronRight className={`h-3 w-3 transition-transform ${showMenu ? 'rotate-90' : ''}`} />
+      </button>
+      {showMenu && (
+        <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-xl border border-gray-200 bg-white p-1.5 shadow-xl">
+          <button
+            onClick={() => onExport('pdf')}
+            className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-xs font-medium text-mid transition-colors hover:bg-gray-50 hover:text-dark"
+          >
+            <FileDown className="h-4 w-4 text-red-500" />
+            <div className="text-left">
+              <div className="font-semibold">PDF</div>
+              <div className="text-[10px] text-grey">High-quality document</div>
+            </div>
+          </button>
+          <button
+            onClick={() => onExport('pptx')}
+            className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-xs font-medium text-mid transition-colors hover:bg-gray-50 hover:text-dark"
+          >
+            <FileText className="h-4 w-4 text-orange-500" />
+            <div className="text-left">
+              <div className="font-semibold">PowerPoint</div>
+              <div className="text-[10px] text-grey">Editable PPTX file</div>
+            </div>
+          </button>
         </div>
       )}
     </div>

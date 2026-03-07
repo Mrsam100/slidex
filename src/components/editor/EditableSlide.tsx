@@ -56,6 +56,7 @@ function useDebouncedSave(
 }
 
 export default function EditableSlide({ slide, theme, onSave }: EditableSlideProps) {
+  const isFun = !!theme.emojiSet
   const [headline, setHeadline] = useState(slide.headline)
   const [body, setBody] = useState(slide.body ?? '')
   const [bullets, setBullets] = useState<string[]>(slide.bullets ?? [])
@@ -181,11 +182,44 @@ export default function EditableSlide({ slide, theme, onSave }: EditableSlidePro
       className="relative h-[720px] w-[1280px] shrink-0 overflow-hidden"
       style={{
         backgroundColor: theme.bgColor,
+        ...(theme.bgGradient ? { backgroundImage: theme.bgGradient } : {}),
         color: theme.textColor,
         fontFamily: theme.fontFamily,
         borderRadius: theme.borderRadius,
       }}
     >
+      {/* Mesh gradient overlays for gradient themes (non-fun) */}
+      {theme.bgGradient && !isFun && (
+        <>
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background: 'radial-gradient(ellipse 80% 60% at 20% 80%, rgba(249,115,22,0.3) 0%, transparent 70%)',
+            }}
+          />
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background: 'radial-gradient(ellipse 60% 50% at 80% 20%, rgba(14,165,233,0.2) 0%, transparent 70%)',
+            }}
+          />
+        </>
+      )}
+      {/* Fun theme: scattered emoji decorations */}
+      {isFun && theme.emojiSet && (
+        <FunEmojiBackground slidePosition={slide.position} emojiSet={theme.emojiSet} />
+      )}
+      {/* Subtle decorative background pattern (non-gradient, non-fun) */}
+      {!theme.bgGradient && !isFun && (
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage: `radial-gradient(${theme.accentColor} 0.5px, transparent 0.5px)`,
+            backgroundSize: '24px 24px',
+          }}
+        />
+      )}
+
       {/* Save indicator */}
       <span
         aria-live="polite"
@@ -225,10 +259,12 @@ export default function EditableSlide({ slide, theme, onSave }: EditableSlidePro
       {slide.layout === 'bullets' && (
         <div className="flex h-full flex-col p-16 pr-20">
           {/* Accent sidebar stripe */}
-          <div
-            className="absolute bottom-16 left-16 top-16 w-1 rounded-full"
-            style={{ backgroundColor: theme.accentColor, opacity: 0.2 }}
-          />
+          {!isFun && (
+            <div
+              className="absolute bottom-16 left-16 top-16 w-1 rounded-full"
+              style={{ backgroundColor: theme.accentColor, opacity: 0.2 }}
+            />
+          )}
           <input
             className={`${inputClass} pl-6 text-[2.75rem] font-bold leading-[1.2] tracking-tight`}
             style={{ color: theme.headlineColor }}
@@ -240,10 +276,16 @@ export default function EditableSlide({ slide, theme, onSave }: EditableSlidePro
           <ul className="mt-10 flex-1 space-y-6 pl-6">
             {bullets.map((bullet, i) => (
               <li key={i} className="group flex items-start gap-5">
-                <span
-                  className="mt-2 h-3 w-3 shrink-0 rounded-sm"
-                  style={{ backgroundColor: theme.accentColor }}
-                />
+                {isFun && theme.emojiSet ? (
+                  <span className="shrink-0 text-2xl">
+                    {theme.emojiSet[i % theme.emojiSet.length]}
+                  </span>
+                ) : (
+                  <span
+                    className="mt-2 h-3 w-3 shrink-0 rounded-sm"
+                    style={{ backgroundColor: theme.accentColor }}
+                  />
+                )}
                 <input
                   className={`${inputClass} flex-1 text-xl leading-relaxed`}
                   value={bullet}
@@ -296,10 +338,16 @@ export default function EditableSlide({ slide, theme, onSave }: EditableSlidePro
                   <ul className="space-y-5">
                     {items.map((item, i) => (
                       <li key={i} className="group flex items-start gap-4">
-                        <span
-                          className="mt-2 h-3 w-3 shrink-0 rounded-sm"
-                          style={{ backgroundColor: theme.accentColor }}
-                        />
+                        {isFun && theme.emojiSet ? (
+                          <span className="shrink-0 text-xl">
+                            {theme.emojiSet[(side === 'left' ? i : i + 5) % theme.emojiSet.length]}
+                          </span>
+                        ) : (
+                          <span
+                            className="mt-2 h-3 w-3 shrink-0 rounded-sm"
+                            style={{ backgroundColor: theme.accentColor }}
+                          />
+                        )}
                         <input
                           className={`${inputClass} flex-1 text-lg leading-relaxed`}
                           value={item}
@@ -400,10 +448,16 @@ export default function EditableSlide({ slide, theme, onSave }: EditableSlidePro
               <ul className="mt-6 space-y-3">
                 {bullets.map((bullet, i) => (
                   <li key={i} className="group flex items-start gap-3">
-                    <span
-                      className="mt-2.5 h-3 w-3 shrink-0"
-                      style={{ backgroundColor: theme.accentColor }}
-                    />
+                    {isFun && theme.emojiSet ? (
+                      <span className="shrink-0 text-xl">
+                        {theme.emojiSet[(i + 2) % theme.emojiSet.length]}
+                      </span>
+                    ) : (
+                      <span
+                        className="mt-2.5 h-3 w-3 shrink-0"
+                        style={{ backgroundColor: theme.accentColor }}
+                      />
+                    )}
                     <input
                       className={`${inputClass} flex-1 text-lg`}
                       value={bullet}
@@ -534,8 +588,53 @@ export default function EditableSlide({ slide, theme, onSave }: EditableSlidePro
 
       {/* Slide number */}
       <span className="absolute bottom-3 right-6 text-[11px] font-medium opacity-30">
-        {slide.position}
+        {isFun ? `✨ ${slide.position}` : slide.position}
       </span>
     </div>
   )
+}
+
+/** Scattered emoji background for the Fun theme */
+function FunEmojiBackground({ slidePosition, emojiSet }: { slidePosition: number; emojiSet: string[] }) {
+  const positions = getEmojiPositions(slidePosition, emojiSet)
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden">
+      {positions.map((ep, i) => (
+        <span
+          key={i}
+          className="absolute select-none"
+          style={{
+            left: `${ep.x}%`,
+            top: `${ep.y}%`,
+            fontSize: `${ep.size}px`,
+            opacity: ep.opacity,
+            transform: `rotate(${ep.rotate}deg)`,
+          }}
+        >
+          {ep.emoji}
+        </span>
+      ))}
+    </div>
+  )
+}
+
+function getEmojiPositions(slidePosition: number, emojiSet: string[]) {
+  const count = 12
+  const positions: { x: number; y: number; size: number; opacity: number; rotate: number; emoji: string }[] = []
+  let seed = slidePosition * 7919
+  const rand = () => {
+    seed = (seed * 16807 + 0) % 2147483647
+    return (seed & 0x7fffffff) / 2147483647
+  }
+  for (let i = 0; i < count; i++) {
+    positions.push({
+      x: rand() * 90 + 2,
+      y: rand() * 85 + 5,
+      size: 28 + rand() * 24,
+      opacity: 0.08 + rand() * 0.12,
+      rotate: -30 + rand() * 60,
+      emoji: emojiSet[Math.floor(rand() * emojiSet.length)] ?? '✨',
+    })
+  }
+  return positions
 }

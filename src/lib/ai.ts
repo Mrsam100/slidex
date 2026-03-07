@@ -14,7 +14,9 @@ CRITICAL: Return ONLY valid JSON. No markdown fences, no backticks, no explanati
 
 export const outlineUserPrompt = (p: GenerationParams) => `
 Design a ${p.slideCount}-slide presentation on: "${p.topic}"
-Tone: ${p.tone} | Audience: ${p.audience}
+Tone: ${p.tone} | Audience: ${p.audience}${p.theme === 'fun' ? `
+
+🎉 FUN THEME: Include a relevant emoji at the START of every slide title (e.g. "🚀 Blast Off Into Space", "💡 Spark New Ideas"). Use varied emoji — make it colorful and energetic!` : ''}
 
 STORY ARC RULES:
 - Slide 1: Always "title" — a compelling, curiosity-provoking title (NOT just the topic repeated)
@@ -53,7 +55,15 @@ CRITICAL: Return ONLY valid JSON. No markdown fences, no backticks, no explanati
 
 export const slideUserPrompt = (item: OutlineItem, p: GenerationParams) => `
 Slide ${item.position} of ${p.slideCount}: "${item.title}"
-Layout: ${item.type} | Tone: ${p.tone} | Topic: ${p.topic} | Audience: ${p.audience}
+Layout: ${item.type} | Tone: ${p.tone} | Topic: ${p.topic} | Audience: ${p.audience}${p.theme === 'fun' ? `
+
+🎉 FUN THEME ACTIVE — EMOJI RULES:
+- Start EVERY headline with a relevant emoji (e.g. "🚀 Blast Off Into Space")
+- Start EVERY bullet point with a relevant emoji (e.g. "💡 Discover new ideas that spark creativity")
+- Use emoji in body text naturally (1-2 per sentence)
+- Use varied, topically relevant emoji — not just 🔥 and ✨
+- Keep it fun and energetic but still informative
+- Quote attributions should include an emoji too (e.g. "🧠 Albert Einstein, Physicist")` : ''}
 
 CONTENT RULES BY LAYOUT:
 

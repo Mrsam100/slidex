@@ -72,7 +72,7 @@ export async function exportDeckToPDF(
         logging: false,
         width: 1280,
         height: 720,
-        backgroundColor: theme.bgColor,
+        backgroundColor: null,
       })
 
       // Add page (first page is auto-created)

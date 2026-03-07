@@ -11,19 +11,81 @@ interface SlideCanvasProps {
 
 export default memo(function SlideCanvas({ slide, theme, isThumb }: SlideCanvasProps) {
   const t = isThumb
+  const isFun = !!theme.emojiSet
+
+  // Deterministic emoji positions based on slide position
+  const emojiPositions = isFun && theme.emojiSet ? getEmojiPositions(slide.position, theme.emojiSet) : []
 
   return (
     <div
       className="relative h-[720px] w-[1280px] shrink-0 overflow-hidden"
       style={{
         backgroundColor: theme.bgColor,
+        ...(theme.bgGradient ? { backgroundImage: theme.bgGradient } : {}),
         color: theme.textColor,
         fontFamily: theme.fontFamily,
         borderRadius: theme.borderRadius,
       }}
     >
+      {/* Mesh gradient overlay for gradient themes (non-fun) */}
+      {theme.bgGradient && !isFun && !t && (
+        <>
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background: 'radial-gradient(ellipse 80% 60% at 20% 80%, rgba(249,115,22,0.3) 0%, transparent 70%)',
+            }}
+          />
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background: 'radial-gradient(ellipse 60% 50% at 80% 20%, rgba(14,165,233,0.2) 0%, transparent 70%)',
+            }}
+          />
+        </>
+      )}
+      {/* Fun theme: scattered background emoji */}
+      {isFun && !t && (
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          {emojiPositions.map((ep, i) => (
+            <span
+              key={i}
+              className="absolute select-none"
+              style={{
+                left: `${ep.x}%`,
+                top: `${ep.y}%`,
+                fontSize: `${ep.size}px`,
+                opacity: ep.opacity,
+                transform: `rotate(${ep.rotate}deg)`,
+              }}
+            >
+              {ep.emoji}
+            </span>
+          ))}
+        </div>
+      )}
+      {/* Fun theme thumbnail: fewer emoji */}
+      {isFun && t && theme.emojiSet && (
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          {theme.emojiSet.slice(0, 4).map((emoji, i) => (
+            <span
+              key={i}
+              className="absolute select-none"
+              style={{
+                left: `${[5, 80, 70, 15][i]}%`,
+                top: `${[8, 75, 10, 80][i]}%`,
+                fontSize: '14px',
+                opacity: 0.25,
+                transform: `rotate(${[-15, 20, -10, 25][i]}deg)`,
+              }}
+            >
+              {emoji}
+            </span>
+          ))}
+        </div>
+      )}
       {/* Subtle decorative background pattern */}
-      {!t && (
+      {!theme.bgGradient && !isFun && !t && (
         <div
           className="pointer-events-none absolute inset-0 opacity-[0.03]"
           style={{
@@ -70,7 +132,7 @@ export default memo(function SlideCanvas({ slide, theme, isThumb }: SlideCanvasP
       {slide.layout === 'bullets' && (
         <div className={`flex h-full flex-col ${t ? 'p-4' : 'p-16 pr-20'}`}>
           {/* Accent sidebar stripe */}
-          {!t && (
+          {!isFun && !t && (
             <div
               className="absolute bottom-16 left-16 top-16 w-1 rounded-full"
               style={{ backgroundColor: theme.accentColor, opacity: 0.2 }}
@@ -88,10 +150,16 @@ export default memo(function SlideCanvas({ slide, theme, isThumb }: SlideCanvasP
                 key={i}
                 className={`flex items-start ${t ? 'gap-2' : 'gap-5'}`}
               >
-                <span
-                  className={`shrink-0 rounded-sm ${t ? 'mt-1 h-2 w-2' : 'mt-2 h-3 w-3'}`}
-                  style={{ backgroundColor: theme.accentColor }}
-                />
+                {isFun && theme.emojiSet ? (
+                  <span className={`shrink-0 ${t ? 'text-sm' : 'text-2xl'}`}>
+                    {theme.emojiSet[i % theme.emojiSet.length]}
+                  </span>
+                ) : (
+                  <span
+                    className={`shrink-0 rounded-sm ${t ? 'mt-1 h-2 w-2' : 'mt-2 h-3 w-3'}`}
+                    style={{ backgroundColor: theme.accentColor }}
+                  />
+                )}
                 <span className={t ? 'text-xs' : 'text-xl leading-relaxed'}>{bullet}</span>
               </li>
             ))}
@@ -114,7 +182,7 @@ export default memo(function SlideCanvas({ slide, theme, isThumb }: SlideCanvasP
             {!t && (
               <div
                 className="absolute left-1/2 top-[45%] h-[40%] w-px -translate-x-1/2"
-                style={{ backgroundColor: theme.accentColor, opacity: 0.15 }}
+                style={{ backgroundColor: theme.accentColor, opacity: isFun ? 0.3 : 0.15 }}
               />
             )}
             <ul className={t ? 'space-y-1' : 'space-y-5'}>
@@ -123,10 +191,16 @@ export default memo(function SlideCanvas({ slide, theme, isThumb }: SlideCanvasP
                   key={i}
                   className={`flex items-start ${t ? 'gap-2' : 'gap-4'}`}
                 >
-                  <span
-                    className={`shrink-0 rounded-sm ${t ? 'mt-1 h-2 w-2' : 'mt-2 h-3 w-3'}`}
-                    style={{ backgroundColor: theme.accentColor }}
-                  />
+                  {isFun && theme.emojiSet ? (
+                    <span className={`shrink-0 ${t ? 'text-sm' : 'text-xl'}`}>
+                      {theme.emojiSet[i % theme.emojiSet.length]}
+                    </span>
+                  ) : (
+                    <span
+                      className={`shrink-0 rounded-sm ${t ? 'mt-1 h-2 w-2' : 'mt-2 h-3 w-3'}`}
+                      style={{ backgroundColor: theme.accentColor }}
+                    />
+                  )}
                   <span className={t ? 'text-xs' : 'text-lg leading-relaxed'}>{item}</span>
                 </li>
               ))}
@@ -137,10 +211,16 @@ export default memo(function SlideCanvas({ slide, theme, isThumb }: SlideCanvasP
                   key={i}
                   className={`flex items-start ${t ? 'gap-2' : 'gap-4'}`}
                 >
-                  <span
-                    className={`shrink-0 rounded-sm ${t ? 'mt-1 h-2 w-2' : 'mt-2 h-3 w-3'}`}
-                    style={{ backgroundColor: theme.accentColor }}
-                  />
+                  {isFun && theme.emojiSet ? (
+                    <span className={`shrink-0 ${t ? 'text-sm' : 'text-xl'}`}>
+                      {theme.emojiSet[(i + 5) % theme.emojiSet.length]}
+                    </span>
+                  ) : (
+                    <span
+                      className={`shrink-0 rounded-sm ${t ? 'mt-1 h-2 w-2' : 'mt-2 h-3 w-3'}`}
+                      style={{ backgroundColor: theme.accentColor }}
+                    />
+                  )}
                   <span className={t ? 'text-xs' : 'text-lg leading-relaxed'}>{item}</span>
                 </li>
               ))}
@@ -215,10 +295,16 @@ export default memo(function SlideCanvas({ slide, theme, isThumb }: SlideCanvasP
                     key={i}
                     className={`flex items-start ${t ? 'gap-2' : 'gap-4'}`}
                   >
-                    <span
-                      className={`shrink-0 rounded-sm ${t ? 'mt-1 h-2 w-2' : 'mt-2 h-3 w-3'}`}
-                      style={{ backgroundColor: theme.accentColor }}
-                    />
+                    {isFun && theme.emojiSet ? (
+                      <span className={`shrink-0 ${t ? 'text-sm' : 'text-xl'}`}>
+                        {theme.emojiSet[(i + 2) % theme.emojiSet.length]}
+                      </span>
+                    ) : (
+                      <span
+                        className={`shrink-0 rounded-sm ${t ? 'mt-1 h-2 w-2' : 'mt-2 h-3 w-3'}`}
+                        style={{ backgroundColor: theme.accentColor }}
+                      />
+                    )}
                     <span className={t ? 'text-xs' : 'text-lg leading-relaxed'}>{bullet}</span>
                   </li>
                 ))}
@@ -273,12 +359,35 @@ export default memo(function SlideCanvas({ slide, theme, isThumb }: SlideCanvasP
         </div>
       )}
 
-      {/* Slide number */}
+      {/* Slide number — fun theme gets emoji */}
       <span
         className={`absolute font-medium ${t ? 'bottom-1 right-2 text-[8px] opacity-30' : 'bottom-5 right-7 text-[11px] opacity-30'}`}
       >
-        {slide.position}
+        {isFun ? `✨ ${slide.position}` : slide.position}
       </span>
     </div>
   )
 })
+
+/** Generate deterministic scattered emoji positions for fun theme background */
+function getEmojiPositions(slidePosition: number, emojiSet: string[]) {
+  const count = 12
+  const positions: { x: number; y: number; size: number; opacity: number; rotate: number; emoji: string }[] = []
+  // Simple seeded pseudo-random based on slide position
+  let seed = slidePosition * 7919
+  const rand = () => {
+    seed = (seed * 16807 + 0) % 2147483647
+    return (seed & 0x7fffffff) / 2147483647
+  }
+  for (let i = 0; i < count; i++) {
+    positions.push({
+      x: rand() * 90 + 2,
+      y: rand() * 85 + 5,
+      size: 28 + rand() * 24,
+      opacity: 0.08 + rand() * 0.12,
+      rotate: -30 + rand() * 60,
+      emoji: emojiSet[Math.floor(rand() * emojiSet.length)] ?? '✨',
+    })
+  }
+  return positions
+}

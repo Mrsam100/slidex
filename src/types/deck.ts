@@ -63,4 +63,6 @@ export interface Theme {
   accentColor: string
   fontFamily: string
   borderRadius: string
+  bgGradient?: string
+  emojiSet?: string[]
 }
